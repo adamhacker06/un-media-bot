@@ -75,18 +75,11 @@ un-media-bot/
 
 ## Team
 - **Adam** — Project Manager
-- **Radhika** — Analyst
-- **Tanvi** — Analyst
-- **Ethan** — Analyst
+- **Radhika** — Project Manager
+- **Tanvi** — Senior Analyst
+- **Ethan** — Senior Analyst
 - **Mateo** — Analyst
 - **Nithya** — Analyst
-
-## Phase 2 Timeline
-- **Week 1 (Apr 7–11):** Product discovery & scoping ✅
-- **Week 2 (Apr 14–18):** Build RAG pipeline, frontend shell, content ingestion
-- **Week 3 (Apr 21–25):** Bot + portal integration, deep linking, intent recognition
-- **Week 4 (Apr 28–May 2):** QA, testing, stakeholder feedback
-- **Week 5 (May 4–8):** Final deliverable, documentation, presentation
 
 ## License
 For academic use only. Delta Consulting × UN DGC.
