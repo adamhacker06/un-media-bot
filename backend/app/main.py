@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from .rag import stream_query
+from .rag import query_once, stream_query
 
 app = FastAPI(title="UN Media Bot API", version="1.0.0")
 
@@ -36,6 +36,17 @@ class ChatRequest(BaseModel):
 def health() -> dict:
     """Liveness probe."""
     return {"status": "ok"}
+
+
+@app.post("/query")
+async def query(request: ChatRequest):
+    """
+    Non-streaming RAG query. Returns a single JSON response — easy to test with curl or Postman.
+
+    Response shape:
+        {"answer": "...", "articles": [...], "assets": [...]}
+    """
+    return await query_once(request.query)
 
 
 @app.post("/chat")
