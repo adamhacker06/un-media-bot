@@ -1,21 +1,59 @@
 """
 FastAPI application entry point for the UN Media Bot backend.
 
-This module defines the `app` object that Uvicorn serves. It is intentionally
-minimal right now — only a `/health` route is wired up. Future routes
-(e.g. `POST /chat`) will import `query()` from `rag.py` and expose the RAG
-pipeline to the frontend.
-
-Run locally:
-    uvicorn app.main:app --reload
+Routes:
+    GET  /health   – liveness probe
+    POST /chat     – streaming RAG query (SSE)
 """
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
-app = FastAPI(title="UN Media Bot API")
+from .rag import stream_query
+
+app = FastAPI(title="UN Media Bot API", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class ChatRequest(BaseModel):
+    query: str
 
 
 @app.get("/health")
 def health() -> dict:
-    """Liveness probe — returns a static OK payload."""
+    """Liveness probe."""
     return {"status": "ok"}
+
+
+@app.post("/chat")
+async def chat(request: ChatRequest):
+    """
+    Stream a RAG-grounded answer plus structured sources via SSE.
+
+    Emits newline-delimited JSON events:
+        {"type": "token",   "content": "..."}
+        {"type": "sources", "articles": [...], "assets": [...]}
+        {"type": "error",   "message": "..."}
+    """
+    return StreamingResponse(
+        stream_query(request.query),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )

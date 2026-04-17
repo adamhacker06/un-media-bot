@@ -1,6 +1,5 @@
 fastapi
-uvicorn
-pinecone-client
+uvicorn[standard]
+pinecone
 openai
 python-dotenv
-langchain

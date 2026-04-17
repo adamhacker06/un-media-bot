@@ -1,25 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UN Media Bot — Press Room</title>
-  <!--
-    Placeholder shell for the UN Media Bot press room landing page.
-
-    This is where the journalist-facing UI will live:
-      - Press room landing page (branding, search, featured resources)
-      - Chat interface that calls the FastAPI backend at /chat
-      - Source-link rendering for grounded RAG responses
-
-    The team may replace this single HTML file with a React scaffold
-    (e.g. Vite + React) once the UI framework decision is finalized.
-  -->
-</head>
-<body>
-  <main>
-    <h1>UN Media Bot</h1>
-    <p>Press room chatbot — coming soon.</p>
-  </main>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UN Press Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
