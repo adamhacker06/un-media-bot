@@ -1,0 +1,890 @@
+{
+  "events": [
+    {
+      "date": "2026-01-17",
+      "title": "Entry into Force of the Marine Biodiversity Treaty",
+      "category": "Climate Action",
+      "organizers": [
+        "OLA"
+      ]
+    },
+    {
+      "date": "2026-01-19/2026-01-23",
+      "title": "World Economic Forum Annual Meeting",
+      "category": "Multilateral Cooperation",
+      "location": "Davos-Klosters, Switzerland",
+      "organizers": [
+        "WEF"
+      ]
+    },
+    {
+      "date": "2026-01-24",
+      "title": "International Day of Education",
+      "category": "SDGs",
+      "organizers": [
+        "UNESCO"
+      ]
+    },
+    {
+      "date": "2026-01-26",
+      "title": "International Day of Clean Energy",
+      "category": "Climate Action",
+      "organizers": [
+        "SE4All",
+        "UNOPS",
+        "UN DESA"
+      ]
+    },
+    {
+      "date": "2026-01-27",
+      "title": "ECOSOC Partnership Forum",
+      "category": "UN Focus",
+      "organizers": [
+        "ECOSOC"
+      ]
+    },
+    {
+      "date": "2026-01-27",
+      "title": "International Day of Commemoration in Memory of the Victims of the Holocaust",
+      "category": "Human Rights",
+      "organizers": [
+        "DGC"
+      ]
+    },
+    {
+      "date": "2026-01-28/2026-01-29",
+      "title": "ECOSOC Coordination Segment",
+      "category": "UN Focus",
+      "organizers": [
+        "DESA"
+      ]
+    },
+    {
+      "date": "2026-02-02/2026-02-10",
+      "title": "Commission for Social Development",
+      "category": "SDGs",
+      "organizers": [
+        "UN DESA",
+        "ECOSOC"
+      ]
+    },
+    {
+      "date": "2026-02-02/2026-02-11",
+      "title": "Commission for Social Development",
+      "category": "UN Focus",
+      "location": "UNHQ New York",
+      "organizers": [
+        "ECOSOC",
+        "UN DESA"
+      ]
+    },
+    {
+      "date": "2026-02-02",
+      "title": "World Wetlands Day",
+      "category": "Climate Action",
+      "organizers": [
+        "UNEP"
+      ]
+    },
+    {
+      "date": "2026-02-06",
+      "title": "International Day of Zero Tolerance for Female Genital Mutilation",
+      "category": "Human Rights",
+      "organizers": [
+        "UNFPA"
+      ]
+    },
+    {
+      "date": "2026-02-11",
+      "title": "International Day of Women and Girls in Science",
+      "category": "Human Rights",
+      "organizers": [
+        "UNESCO"
+      ]
+    },
+    {
+      "date": "2026-02-11",
+      "title": "International Day of Women & Girls in Science",
+      "category": "SDGs",
+      "organizers": [
+        "UNESCO"
+      ]
+    },
+    {
+      "date": "2026-02-12",
+      "title": "International Day for the Prevention of Violent Extremism as and when Conducive to Terrorism",
+      "category": "Peace & Security",
+      "organizers": [
+        "UNOCT"
+      ]
+    },
+    {
+      "date": "2026-02-12",
+      "title": "International Day against the Use of Child Soldiers",
+      "category": "Peace & Security",
+      "title_alt": "Red Hand Day",
+      "organizers": [
+        "SRSG-CAAC"
+      ]
+    },
+    {
+      "date": "2026-02-16/2026-02-20",
+      "title": "Committee for Development Policy",
+      "category": "UN Focus",
+      "location": "Athens, Greece",
+      "organizers": [
+        "CDP"
+      ]
+    },
+    {
+      "date": "2026-02-20",
+      "title": "World Day of Social Justice",
+      "category": "Human Rights",
+      "organizers": [
+        "ILO",
+        "UN DESA"
+      ]
+    },
+    {
+      "date": "2026-02-20",
+      "title": "World Day of Social Justice",
+      "category": "SDGs",
+      "organizers": [
+        "ILO",
+        "UN DESA"
+      ]
+    },
+    {
+      "date": "2026-02-24/2026-02-27",
+      "title": "Committee for Development Policy",
+      "category": "UN Focus",
+      "location": "UNHQ New York",
+      "organizers": [
+        "ECOSOC",
+        "UN DESA"
+      ]
+    },
+    {
+      "date": "2026-02-24/2026-02-27",
+      "title": "Asia-Pacific Forum on Sustainable Development",
+      "category": "SDGs",
+      "organizers": [
+        "UN ESCAP"
+      ]
+    },
+    {
+      "date": "2026-03-01",
+      "title": "Zero Discrimination Day",
+      "category": "Human Rights",
+      "organizers": [
+        "UNAIDS"
+      ]
+    },
+    {
+      "date": "2026-03-03",
+      "title": "World Wildlife Day",
+      "category": "Climate Action",
+      "organizers": [
+        "UNEP"
+      ]
+    },
+    {
+      "date": "2026-03-03",
+      "title": "World Wildlife Day",
+      "category": "SDGs",
+      "organizers": [
+        "UNEP"
+      ]
+    },
+    {
+      "date": "2026-03-05",
+      "title": "International Day for Disarmament and Non-Proliferation Awareness",
+      "category": "Peace & Security",
+      "organizers": [
+        "UNODA"
+      ]
+    },
+    {
+      "date": "2026-03-08",
+      "title": "International Women's Day",
+      "category": "SDGs",
+      "organizers": [
+        "UN Women"
+      ]
+    },
+    {
+      "date": "2026-03-08",
+      "title": "International Women’s Day",
+      "category": "Human Rights",
+      "organizers": [
+        "UN Women"
+      ]
+    },
+    {
+      "date": "2026-03-09/2026-03-20",
+      "title": "Commission on the Status of Women, 70th Session",
+      "category": "Human Rights",
+      "organizers": [
+        "UN Women",
+        "ECOSOC"
+      ]
+    },
+    {
+      "date": "2026-03-09/2026-03-20",
+      "title": "Commission on the Status of Women, 70th session",
+      "title_alt": "CSW70",
+      "category": "Multilateral Cooperation",
+      "location": "UNHQ New York",
+      "organizers": [
+        "UN Women",
+        "ECOSOC"
+      ]
+    },
+    {
+      "date": "2026-03-15",
+      "title": "International Day to Combat Islamophobia",
+      "category": "Human Rights",
+      "organizers": [
+        "OHCHR"
+      ]
+    },
+    {
+      "date": "2026-03-21",
+      "title": "World Glacier Day",
+      "category": "Climate Action",
+      "organizers": [
+        "WMO",
+        "UNESCO"
+      ]
+    },
+    {
+      "date": "2026-03-21",
+      "title": "International Day of Forests",
+      "category": "Climate Action",
+      "organizers": [
+        "FAO",
+        "UN DESA"
+      ]
+    },
+    {
+      "date": "2026-03-21",
+      "title": "International Day for the Elimination of Racial Discrimination",
+      "category": "Human Rights",
+      "organizers": [
+        "OHCHR"
+      ]
+    },
+    {
+      "date": "2026-03-22",
+      "title": "World Water Day & UN World Water Development Report Launch",
+      "category": "Climate Action",
+      "organizers": [
+        "UNESCO",
+        "UN-Water"
+      ]
+    },
+    {
+      "date": "2026-03-23",
+      "title": "World Meteorological Day",
+      "category": "SDGs",
+      "organizers": [
+        "WMO"
+      ]
+    },
+    {
+      "date": "2026-03-25",
+      "title": "International Day of Remembrance of the Victims of Slavery and the Transatlantic Slave Trade",
+      "category": "Human Rights",
+      "organizers": [
+        "DGC"
+      ]
+    },
+    {
+      "date": "2026-03-30",
+      "title": "International Day of Zero Waste",
+      "category": "Climate Action",
+      "organizers": [
+        "UNEP"
+      ]
+    },
+    {
+      "date": "2026-03-31/2026-04-02",
+      "title": "Arab Forum for Sustainable Development",
+      "category": "SDGs",
+      "organizers": [
+        "UN ESCWA"
+      ]
+    },
+    {
+      "date": "2026-03-31/2026-04-02",
+      "title": "Arab Forum for Sustainable Development",
+      "category": "Climate Action",
+      "organizers": [
+        "UN ESCWA"
+      ]
+    },
+    {
+      "date": "2026-04-04",
+      "title": "International Day for Mine Awareness and Assistance in Mine Action",
+      "category": "Peace & Security",
+      "organizers": [
+        "UNMAS"
+      ]
+    },
+    {
+      "date": "2026-04-06",
+      "title": "International Day of Sport for Development and Peace",
+      "category": "SDGs",
+      "organizers": [
+        "UN DESA",
+        "DGC"
+      ]
+    },
+    {
+      "date": "2026-04-07",
+      "title": "International Day of Reflection on the 1994 Genocide against the Tutsi in Rwanda",
+      "category": "Human Rights",
+      "organizers": [
+        "DGC"
+      ]
+    },
+    {
+      "date": "2026-04-07",
+      "title": "World Health Day",
+      "category": "SDGs",
+      "organizers": [
+        "WHO"
+      ]
+    },
+    {
+      "date": "2026-04-13/2026-04-17",
+      "title": "Commission on Population and Development",
+      "title_alt": "CPD59",
+      "category": "SDGs"
+    },
+    {
+      "date": "2026-04-14/2026-04-16",
+      "title": "ECOSOC Youth Forum",
+      "category": "SDGs"
+    },
+    {
+      "date": "2026-04-14/2026-04-16",
+      "title": "ECOSOC Youth Forum",
+      "category": "Multilateral Cooperation",
+      "location": "UNHQ New York",
+      "organizers": [
+        "UN DESA",
+        "ECOSOC"
+      ]
+    },
+    {
+      "date": "2026-04-20/2026-04-24",
+      "title": "SDG Investment Fair",
+      "category": "SDGs",
+      "organizers": [
+        "UN DESA"
+      ]
+    },
+    {
+      "date": "2026-04-20/2026-04-24",
+      "title": "Commission on Science and Technology for Development",
+      "title_alt": "CSTD, 29th session",
+      "category": "Multilateral Cooperation",
+      "location": "Geneva, Switzerland",
+      "organizers": [
+        "UNCTAD",
+        "ECOSOC"
+      ]
+    },
+    {
+      "date": "2026-04-20/2026-05-01",
+      "title": "UN Permanent Forum on Indigenous Issues",
+      "category": "SDGs"
+    },
+    {
+      "date": "2026-04-20/2026-05-01",
+      "title": "Permanent Forum on Indigenous Issues",
+      "category": "Human Rights",
+      "organizers": [
+        "UN DESA"
+      ]
+    },
+    {
+      "date": "2026-04-24",
+      "title": "International Day of Multilateralism and Diplomacy for Peace",
+      "category": "Peace & Security"
+    },
+    {
+      "date": "2026-04-28",
+      "title": "World Day for Safety and Health at Work",
+      "category": "SDGs",
+      "organizers": [
+        "ILO"
+      ]
+    },
+    {
+      "date": "2026-05-03",
+      "title": "World Press Freedom Day",
+      "category": "Human Rights",
+      "organizers": [
+        "UNESCO"
+      ]
+    },
+    {
+      "date": "2026-05-03",
+      "title": "World Press Freedom Day",
+      "category": "SDGs"
+    },
+    {
+      "date": "2026-05-06/2026-05-07",
+      "title": "STI Forum: Science, Technology & Innovation for the SDGs",
+      "category": "SDGs"
+    },
+    {
+      "date": "2026-05-15",
+      "title": "International Day of Families",
+      "category": "SDGs",
+      "organizers": [
+        "UN DESA"
+      ]
+    },
+    {
+      "date": "2026-05-17",
+      "title": "World Telecommunication and Information Society Day",
+      "category": "SDGs",
+      "organizers": [
+        "ITU"
+      ]
+    },
+    {
+      "date": "2026-05-17",
+      "title": "International Day against Homophobia, Biphobia and Transphobia",
+      "category": "Human Rights",
+      "organizers": [
+        "OHCHR",
+        "UNAIDS",
+        "UN Women"
+      ]
+    },
+    {
+      "date": "2026-05-21",
+      "title": "World Day for Cultural Diversity for Dialogue and Development",
+      "category": "SDGs",
+      "organizers": [
+        "UNESCO"
+      ]
+    },
+    {
+      "date": "2026-05-22",
+      "title": "International Day for Biological Diversity",
+      "category": "Climate Action",
+      "organizers": [
+        "Convention on Biological Diversity"
+      ]
+    },
+    {
+      "date": "2026-05-29",
+      "title": "International Day of United Nations Peacekeepers",
+      "category": "Peace & Security",
+      "organizers": [
+        "DPO"
+      ]
+    },
+    {
+      "date": "2026-05-29",
+      "title": "International Day of United Nations Peacekeepers",
+      "category": "Responding to Crisis & Conflict",
+      "organizers": [
+        "DPO"
+      ]
+    },
+    {
+      "date": "2026-06-04",
+      "title": "International Day of Innocent Children Victims of Aggression",
+      "category": "Peace & Security"
+    },
+    {
+      "date": "2026-06-05",
+      "title": "World Environment Day",
+      "category": "Climate Action",
+      "organizers": [
+        "UNEP"
+      ]
+    },
+    {
+      "date": "2026-06-05",
+      "title": "World Environment Day",
+      "category": "SDGs",
+      "organizers": [
+        "UNEP"
+      ]
+    },
+    {
+      "date": "2026-06-08",
+      "title": "World Oceans Day",
+      "category": "Climate Action"
+    },
+    {
+      "date": "2026-06-08",
+      "title": "World Oceans Day",
+      "category": "SDGs",
+      "organizers": [
+        "UNESCO"
+      ]
+    },
+    {
+      "date": "2026-06-12",
+      "title": "World Day Against Child Labour",
+      "category": "Human Rights",
+      "organizers": [
+        "ILO"
+      ]
+    },
+    {
+      "date": "2026-06-17",
+      "title": "World Day to Combat Desertification and Drought",
+      "category": "Climate Action",
+      "organizers": [
+        "UNCCD"
+      ]
+    },
+    {
+      "date": "2026-06-18",
+      "title": "International Day for Countering Hate Speech",
+      "category": "Human Rights",
+      "organizers": [
+        "OSAPG",
+        "DGC"
+      ]
+    },
+    {
+      "date": "2026-06-19",
+      "title": "International Day for the Elimination of Sexual Violence in Conflict",
+      "category": "Peace & Security"
+    },
+    {
+      "date": "2026-06-20",
+      "title": "World Refugee Day",
+      "category": "Responding to Crisis & Conflict",
+      "organizers": [
+        "UNHCR"
+      ]
+    },
+    {
+      "date": "2026-06-20",
+      "title": "World Refugee Day",
+      "category": "SDGs",
+      "organizers": [
+        "UNHCR"
+      ]
+    },
+    {
+      "date": "2026-06-26",
+      "title": "International Day against Drug Abuse and Illicit Trafficking & World Drug Report Launch",
+      "category": "Peace & Security",
+      "organizers": [
+        "UNODC"
+      ]
+    },
+    {
+      "date": "2026-06-26",
+      "title": "UN Charter Day",
+      "category": "UN Focus"
+    },
+    {
+      "date": "2026-07-01/2026-07-03",
+      "title": "ACUNS Annual Meeting",
+      "category": "Multilateral Cooperation",
+      "location": "Lisbon, Portugal",
+      "organizers": [
+        "Academic Council on the United Nations System"
+      ]
+    },
+    {
+      "date": "2026-07-06/2026-07-10",
+      "title": "High-level Political Forum on Sustainable Development",
+      "title_alt": "HLPF",
+      "category": "SDGs"
+    },
+    {
+      "date": "2026-07-07/2026-07-10",
+      "title": "AI for Good Global Summit & AI Governance Day",
+      "category": "Climate Action",
+      "organizers": [
+        "ITU"
+      ]
+    },
+    {
+      "date": "2026-07-07/2026-07-10",
+      "title": "AI for Good Global Summit & AI Governance Day",
+      "category": "Multilateral Cooperation",
+      "location": "Geneva, Switzerland",
+      "organizers": [
+        "ITU"
+      ]
+    },
+    {
+      "date": "2026-07-11",
+      "title": "World Population Day & UNFPA Report",
+      "category": "SDGs"
+    },
+    {
+      "date": "2026-07-13/2026-07-16",
+      "title": "High-level Segment of ECOSOC",
+      "category": "UN Focus",
+      "organizers": [
+        "ECOSOC"
+      ]
+    },
+    {
+      "date": "2026-07-17",
+      "title": "International Day of International Criminal Justice",
+      "category": "Peace & Security"
+    },
+    {
+      "date": "2026-07-28",
+      "title": "75th Anniversary of the 1951 Refugee Convention",
+      "category": "Multilateral Cooperation",
+      "organizers": [
+        "UNHCR"
+      ]
+    },
+    {
+      "date": "2026-07-30",
+      "title": "World Day Against Trafficking in Persons",
+      "category": "Peace & Security",
+      "organizers": [
+        "UNODC"
+      ]
+    },
+    {
+      "date": "2026-08-09",
+      "title": "International Day of the World's Indigenous Peoples",
+      "category": "Human Rights",
+      "organizers": [
+        "UN DESA"
+      ]
+    },
+    {
+      "date": "2026-08-12",
+      "title": "World Youth Day",
+      "category": "SDGs",
+      "organizers": [
+        "UN DESA"
+      ]
+    },
+    {
+      "date": "2026-08-29",
+      "title": "International Day against Nuclear Tests",
+      "category": "Peace & Security"
+    },
+    {
+      "date": "2026-08-31",
+      "title": "International Day for People of African Descent",
+      "category": "Human Rights",
+      "organizers": [
+        "UNFPA",
+        "OHCHR"
+      ]
+    },
+    {
+      "date": "2026-09-07",
+      "title": "International Day of Clean Air for Blue Skies",
+      "category": "Climate Action",
+      "organizers": [
+        "UNEP"
+      ]
+    },
+    {
+      "date": "2026-09-08",
+      "title": "Opening of the 81st Session of the United Nations General Assembly",
+      "category": "UN Focus",
+      "organizers": [
+        "OPGA",
+        "UNHQ New York"
+      ]
+    },
+    {
+      "date": "2026-09-08",
+      "title": "Opening of the 81st Session of the United Nations General Assembly",
+      "category": "Multilateral Cooperation",
+      "organizers": [
+        "OPGA",
+        "UNHQ New York"
+      ]
+    },
+    {
+      "date": "2026-09-12",
+      "title": "International Day for South-South Cooperation",
+      "category": "SDGs"
+    },
+    {
+      "date": "2026-09-16",
+      "title": "International Day for the Preservation of the Ozone Layer",
+      "category": "Climate Action",
+      "organizers": [
+        "UNEP"
+      ]
+    },
+    {
+      "date": "2026-09-20",
+      "title": "International Day of Peace",
+      "category": "Responding to Crisis & Conflict",
+      "organizers": [
+        "DGC"
+      ]
+    },
+    {
+      "date": "2026-09-21",
+      "title": "International Day of Peace",
+      "category": "Peace & Security"
+    },
+    {
+      "date": "2026-09-22/2026-09-28",
+      "title": "UN General Assembly High-Level Week",
+      "category": "Multilateral Cooperation",
+      "organizers": [
+        "OPGA",
+        "EOSG"
+      ],
+      "location": "UNHQ New York"
+    },
+    {
+      "date": "2026-09-22",
+      "title": "UNGA High-Level General Debate",
+      "category": "UN Focus",
+      "location": "UNHQ New York"
+    },
+    {
+      "date": "2026-10-02",
+      "title": "International Day of Non-Violence",
+      "category": "Peace & Security"
+    },
+    {
+      "date": "2026-10-05",
+      "title": "World Teachers’ Day",
+      "category": "SDGs",
+      "organizers": [
+        "UNESCO"
+      ]
+    },
+    {
+      "date": "2026-10-11",
+      "title": "International Day of the Girl Child",
+      "category": "Human Rights",
+      "organizers": [
+        "UNFPA"
+      ]
+    },
+    {
+      "date": "2026-10-16",
+      "title": "World Food Day",
+      "category": "SDGs",
+      "organizers": [
+        "FAO",
+        "IFAD",
+        "WFP"
+      ]
+    },
+    {
+      "date": "2026-10-17",
+      "title": "International Day for the Eradication of Poverty",
+      "category": "SDGs"
+    },
+    {
+      "date": "2026-10-24",
+      "title": "UN Day",
+      "category": "UN Focus"
+    },
+    {
+      "date": "2026-10-31",
+      "title": "World Cities Day",
+      "category": "SDGs",
+      "organizers": [
+        "UN-Habitat"
+      ]
+    },
+    {
+      "date": "2026-10-31",
+      "title": "Anniversary of Security Council resolution 1325 on Women, Peace and Security",
+      "category": "Peace & Security"
+    },
+    {
+      "date": "2026-11-09/2026-11-20",
+      "title": "UN Climate Change Conference",
+      "title_alt": "COP31",
+      "category": "Climate Action",
+      "organizers": [
+        "UNFCCC"
+      ]
+    },
+    {
+      "date": "2026-11-09/2026-11-20",
+      "title": "UN Climate Change Conference",
+      "title_alt": "COP31",
+      "category": "Multilateral Cooperation",
+      "location": "Antalya, Türkiye",
+      "organizers": [
+        "UNFCCC"
+      ]
+    },
+    {
+      "date": "2026-11-10",
+      "title": "World Science Day for Peace and Development",
+      "category": "Human Rights",
+      "organizers": [
+        "UNESCO"
+      ]
+    },
+    {
+      "date": "2026-11-10",
+      "title": "World Science Day for Peace and Development",
+      "category": "SDGs",
+      "organizers": [
+        "UNESCO"
+      ]
+    },
+    {
+      "date": "2026-11-20",
+      "title": "World Children’s Day",
+      "category": "Human Rights",
+      "organizers": [
+        "UNICEF"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "title": "International Day for the Elimination of Violence against Women",
+      "category": "Human Rights",
+      "organizers": [
+        "UN Women"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "title": "International Day for the Elimination of Violence against Women",
+      "category": "SDGs",
+      "organizers": [
+        "UN Women"
+      ]
+    },
+    {
+      "date": "2026-12-03",
+      "title": "International Day of Persons with Disabilities",
+      "category": "Human Rights"
+    },
+    {
+      "date": "2026-12-03",
+      "title": "International Day of Persons with Disabilities",
+      "category": "SDGs"
+    },
+    {
+      "date": "2026-12-10",
+      "title": "Human Rights Day",
+      "category": "Human Rights",
+      "organizers": [
+        "OHCHR"
+      ]
+    }
+  ]
+}
