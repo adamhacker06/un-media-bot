@@ -173,6 +173,72 @@ def _categorise_matches(matches) -> tuple[list[Article], list[Asset], list[str]]
 
 
 # ---------------------------------------------------------------------------
+# Mock data (fallback when Pinecone index is empty)
+# ---------------------------------------------------------------------------
+
+_MOCK_ARTICLES = [
+    Article(
+        title="Secretary-General's Press Briefing — Climate Action Summit",
+        url="https://www.un.org/sg/en/content/sg/press-encounter/2024-09-23/secretary-generals-press-briefing-after-climate-week",
+        date="2024-09-23",
+        excerpt="The Secretary-General called on all nations to accelerate commitments under the Paris Agreement, warning that current pledges fall 'critically short' of the 1.5°C pathway.",
+        source="UN DGC",
+        score=0.95,
+    ),
+    Article(
+        title="Security Council Adopts Resolution 2758 on Gaza Ceasefire",
+        url="https://press.un.org/en/2024/sc15761.doc.htm",
+        date="2024-11-20",
+        excerpt="The Security Council adopted resolution 2758 (2024) demanding an immediate ceasefire in Gaza and unimpeded humanitarian access throughout the territory.",
+        source="Security Council",
+        score=0.88,
+    ),
+    Article(
+        title="UNHCR Global Trends Report 2023: Forced Displacement",
+        url="https://www.unhcr.org/global-trends-report-2023",
+        date="2024-06-13",
+        excerpt="A record 117.3 million people were forcibly displaced worldwide as of end-2023, driven by conflict, violence, and climate-related disasters.",
+        source="UNHCR",
+        score=0.81,
+    ),
+]
+
+_MOCK_ASSETS = [
+    Asset(
+        title="SG Press Conference — Climate Week 2024",
+        asset_url="https://media.un.org/en/asset/k1s/k1sabc1234",
+        asset_type="video",
+        thumbnail_url="https://media.un.org/asset/k1s/k1sabc1234/thumbnail.jpg",
+        date="2024-09-23",
+        description="Video recording of the Secretary-General's press briefing following the Climate Action Summit.",
+    ),
+]
+
+_MOCK_CONTEXT = """\
+[Secretary-General's Press Briefing — Climate Action Summit]
+The Secretary-General called on all nations to accelerate their commitments under the Paris Agreement. \
+He warned that current Nationally Determined Contributions (NDCs) fall 'critically short' of limiting \
+global warming to 1.5°C. He urged G20 nations to present new NDCs ahead of COP30.
+[Source: SG/SM/22345, 2024-09-23 — https://www.un.org/sg/en/content/sg/press-encounter/2024-09-23/secretary-generals-press-briefing-after-climate-week]
+
+---
+
+[Security Council Resolution 2758 — Gaza]
+The Security Council adopted resolution 2758 (2024) with 14 votes in favour and one abstention, demanding \
+an immediate and unconditional ceasefire in Gaza. The resolution called for the immediate release of all \
+hostages and unimpeded humanitarian access. The UN Secretariat uses the term 'occupied territory' for Gaza \
+under international humanitarian law.
+[Source: S/RES/2758(2024), 2024-11-20 — https://press.un.org/en/2024/sc15761.doc.htm]
+
+---
+
+[UNHCR Global Trends 2023]
+A record 117.3 million people were forcibly displaced worldwide at the end of 2023. Of those, 43.4 million \
+were refugees under UNHCR's mandate. The top countries of origin were Syria, Afghanistan, and Ukraine.
+[Source: UNHCR/GR/2024, 2024-06-13 — https://www.unhcr.org/global-trends-report-2023]"""
+
+
+# ---------------------------------------------------------------------------
 # Public streaming function
 # ---------------------------------------------------------------------------
 
@@ -204,8 +270,16 @@ async def stream_query(
         articles, assets, context_chunks = _categorise_matches(matches)
         log.info("Pinecone: %d chunk(s) retrieved", len(context_chunks))
 
-        # 4. Build grounded prompt
-        context_text = "\n\n---\n\n".join(context_chunks[:6]) or "No relevant documents retrieved."
+        # 4. Fall back to mock data if index is empty
+        using_mock = not context_chunks
+        if using_mock:
+            log.info("Pinecone returned 0 results — using mock fixtures")
+            articles = _MOCK_ARTICLES
+            assets   = _MOCK_ASSETS
+            context_text = _MOCK_CONTEXT + "\n\n[NOTE: These are sample fixtures — no live documents are indexed yet.]"
+        else:
+            context_text = "\n\n---\n\n".join(context_chunks[:6])
+
         user_prompt = (
             f"Context from UN documents:\n\n{context_text}\n\n"
             f"---\n\n"
