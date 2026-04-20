@@ -421,13 +421,15 @@ html, body, #root {
   justify-content: center;
   border-bottom: 1px solid var(--border);
   min-height: 49px;
-  padding: 0 32px;
+  padding: 0 40px;
 }
 
 .chat-global-tabs {
   display: flex;
   gap: 0;
   margin-bottom: -1px;
+  max-width: 820px;
+  width: 100%;
 }
 
 .chat-messages {
@@ -438,12 +440,12 @@ html, body, #root {
   flex-direction: column;
 }
 
-/* Centered content wrapper */
+/* Content wrapper — centered with side margins */
 .chat-content-wrap {
-  max-width: 760px;
+  max-width: 820px;
   width: 100%;
   margin: 0 auto;
-  padding: 32px 24px 16px;
+  padding: 28px 40px 16px;
   display: flex;
   flex-direction: column;
 }
@@ -465,14 +467,24 @@ html, body, #root {
   margin-top: 8px;
 }
 
-/* Current query shown above the answer */
+/* Current query — right-aligned bubble like Perplexity */
 .chat-current-query {
-  font-size: 22px;
-  font-weight: 500;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 28px;
+}
+
+.chat-current-query-bubble {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px 18px 4px 18px;
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: 400;
   color: var(--text-primary);
-  line-height: 1.35;
-  margin-bottom: 24px;
-  letter-spacing: -0.3px;
+  max-width: 72%;
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 /* History messages (previous exchanges) */
@@ -482,18 +494,20 @@ html, body, #root {
 
 .chat-history-msg--user {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .chat-history-query {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--text-secondary);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 6px 14px;
+  border-radius: 18px 18px 4px 18px;
+  padding: 7px 14px;
   display: inline-block;
+  max-width: 72%;
+  word-break: break-word;
 }
 
 .chat-history-answer {

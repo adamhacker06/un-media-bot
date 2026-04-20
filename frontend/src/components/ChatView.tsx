@@ -119,12 +119,14 @@ export default function ChatView({ messages, onSend }: ChatViewProps) {
                 </div>
               ))}
 
-            {/* Latest query */}
+            {/* Latest query — right-side bubble */}
             {latestAssistant && (() => {
               const latestIdx = messages.findIndex((m) => m.id === latestAssistant.id)
               const latestQuery = latestIdx > 0 ? messages[latestIdx - 1] : null
               return latestQuery ? (
-                <div className="chat-current-query">{latestQuery.content}</div>
+                <div className="chat-current-query">
+                  <span className="chat-current-query-bubble">{latestQuery.content}</span>
+                </div>
               ) : null
             })()}
 
