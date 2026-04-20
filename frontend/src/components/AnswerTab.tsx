@@ -1,9 +1,48 @@
+import type { ReactNode } from 'react'
+
 // Strip Qwen's chain-of-thought <think>...</think> blocks before display.
 // While the block is still open (streaming), show skeleton instead of raw reasoning.
 function stripThink(raw: string): { text: string; thinking: boolean } {
   const closed = raw.replace(/<think>[\s\S]*?<\/think>\s*/g, '')
   const stillOpen = /<think>/.test(raw) && !raw.includes('</think>')
   return { text: closed.trimStart(), thinking: stillOpen }
+}
+
+// Matches: [Source: title, date — https://...]
+const CITATION_RE = /\[Source:\s*[^\]—]+?,\s*[^—\]]+?\s*—\s*(https?:\/\/[^\]]+?)\]/g
+
+function CitationBadge({ url }: { url: string }) {
+  let label = url
+  try {
+    label = new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    // keep raw url as label
+  }
+  return (
+    <a
+      className="citation-badge"
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {label}
+    </a>
+  )
+}
+
+function renderWithCitations(text: string): ReactNode[] {
+  const nodes: ReactNode[] = []
+  let last = 0
+  let ci = 0
+  CITATION_RE.lastIndex = 0
+  let m: RegExpExecArray | null
+  while ((m = CITATION_RE.exec(text)) !== null) {
+    if (m.index > last) nodes.push(text.slice(last, m.index))
+    nodes.push(<CitationBadge key={ci++} url={m[1].trim()} />)
+    last = m.index + m[0].length
+  }
+  if (last < text.length) nodes.push(text.slice(last))
+  return nodes
 }
 
 function SkeletonLines() {
@@ -41,7 +80,6 @@ export default function AnswerTab({ answer, isStreaming, error }: AnswerTabProps
 
   const { text, thinking } = stripThink(answer)
 
-  // Show skeleton while model is thinking or while stream hasn't started yet
   if (thinking || (!text && isStreaming)) {
     return (
       <div className="tab-content">
@@ -65,7 +103,7 @@ export default function AnswerTab({ answer, isStreaming, error }: AnswerTabProps
     <div className="tab-content">
       <div className="answer-body">
         <div className="answer-text">
-          {text}
+          {renderWithCitations(text)}
           {isStreaming && <span className="cursor-blink" />}
         </div>
       </div>

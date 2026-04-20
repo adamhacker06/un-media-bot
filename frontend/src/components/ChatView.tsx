@@ -3,51 +3,25 @@ import SearchBar from './SearchBar.tsx'
 import AnswerTab from './AnswerTab.tsx'
 import SourcesTab from './SourcesTab.tsx'
 import AssetsTab from './AssetsTab.tsx'
-import type { Message, TabId } from '../types.ts'
+import type { Article, Message, TabId } from '../types.ts'
 
-// ── Per-message tabs for sources/assets ──────────────────
-function MessageTabs({
-  message,
-}: {
-  message: Message
-}) {
-  const [tab, setTab] = useState<TabId>('answer')
-  const hasArticles = message.articles.length > 0
-  const hasAssets = message.assets.length > 0
+const CITATION_URL_RE = /\[Source:\s*[^\]—]+?,\s*[^—\]]+?\s*—\s*(https?:\/\/[^\]]+?)\]/g
 
-  if (!message.content && !message.isStreaming) return null
-
-  return (
-    <div className="msg-tabs-wrap">
-      <div className="tabs-bar" style={{ padding: 0, borderBottom: '1px solid var(--border)' }}>
-        {(['answer', 'sources', 'assets'] as TabId[]).map((id) => {
-          const count = id === 'sources' ? message.articles.length : id === 'assets' ? message.assets.length : undefined
-          return (
-            <button
-              key={id}
-              className={`tab-btn ${tab === id ? 'active' : ''}`}
-              onClick={() => setTab(id)}
-            >
-              {id.charAt(0).toUpperCase() + id.slice(1)}
-              {count != null && count > 0 && <span className="tab-count">{count}</span>}
-            </button>
-          )
-        })}
-      </div>
-      {tab === 'answer' && (
-        <AnswerTab answer={message.content} isStreaming={message.isStreaming} error={null} />
-      )}
-      {tab === 'sources' && (
-        <SourcesTab articles={message.articles} isLoading={message.isStreaming && !hasArticles} />
-      )}
-      {tab === 'assets' && (
-        <AssetsTab assets={message.assets} isLoading={message.isStreaming && !hasAssets} />
-      )}
-    </div>
-  )
+function extractCitedUrls(text: string): Set<string> {
+  const urls = new Set<string>()
+  CITATION_URL_RE.lastIndex = 0
+  let m: RegExpExecArray | null
+  while ((m = CITATION_URL_RE.exec(text)) !== null) urls.add(m[1].trim())
+  return urls
 }
 
-// ── Empty state ───────────────────────────────────────────
+function filterCitedArticles(articles: Article[], answerText: string, isStreaming: boolean): Article[] {
+  if (isStreaming) return articles
+  const cited = extractCitedUrls(answerText)
+  if (cited.size === 0) return articles
+  return articles.filter((a) => a.url && cited.has(a.url))
+}
+
 function EmptyState() {
   return (
     <div className="chat-empty">
@@ -62,7 +36,6 @@ function EmptyState() {
   )
 }
 
-// ── Main ChatView ─────────────────────────────────────────
 interface ChatViewProps {
   messages: Message[]
   onSend: (query: string) => void
@@ -70,10 +43,18 @@ interface ChatViewProps {
 
 export default function ChatView({ messages, onSend }: ChatViewProps) {
   const [input, setInput] = useState('')
+  const [activeTab, setActiveTab] = useState<TabId>('answer')
   const bottomRef = useRef<HTMLDivElement>(null)
   const isStreaming = messages.some((m) => m.isStreaming)
 
-  // Auto-scroll to latest message
+  // Latest assistant message drives the tab content
+  const latestAssistant = [...messages].reverse().find((m) => m.role === 'assistant')
+
+  // Reset to answer tab whenever a new response starts
+  useEffect(() => {
+    setActiveTab('answer')
+  }, [latestAssistant?.id])
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -83,30 +64,95 @@ export default function ChatView({ messages, onSend }: ChatViewProps) {
     onSend(q)
   }
 
+  const hasResponse = !!latestAssistant
+
+  const citedArticles = latestAssistant
+    ? filterCitedArticles(latestAssistant.articles, latestAssistant.content, latestAssistant.isStreaming ?? false)
+    : []
+
+  const tabs: { id: TabId; label: string; count?: number }[] = [
+    { id: 'answer', label: 'Answer' },
+    { id: 'sources', label: 'Links', count: citedArticles.length },
+    { id: 'assets', label: 'Assets', count: latestAssistant?.assets.length },
+  ]
+
   return (
     <div className="chat-view">
-      {/* Top bar */}
-      <div className="topbar">
-        <div className="lang-selector">EN ▾</div>
+      {/* Top bar — tab bar when response exists, language selector otherwise */}
+      <div className="chat-topbar">
+        {hasResponse ? (
+          <div className="chat-global-tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+                {tab.count != null && tab.count > 0 && (
+                  <span className="tab-count">{tab.count}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="lang-selector">EN ▾</div>
+        )}
       </div>
 
-      {/* Messages */}
+      {/* Scrollable content */}
       <div className="chat-messages">
         {messages.length === 0 ? (
           <EmptyState />
         ) : (
-          messages.map((msg) => (
-            <div key={msg.id} className={`chat-message chat-message--${msg.role}`}>
-              {msg.role === 'user' ? (
-                <div className="chat-bubble-user">{msg.content}</div>
-              ) : (
-                <div className="chat-bubble-assistant">
-                  <div className="chat-olive-label">Olive</div>
-                  <MessageTabs message={msg} />
+          <div className="chat-content-wrap">
+            {/* History: all messages except the latest assistant response */}
+            {messages
+              .filter((m) => m.id !== latestAssistant?.id)
+              .map((msg) => (
+                <div key={msg.id} className={`chat-history-msg chat-history-msg--${msg.role}`}>
+                  {msg.role === 'user' ? (
+                    <span className="chat-history-query">{msg.content}</span>
+                  ) : (
+                    <p className="chat-history-answer">{msg.content}</p>
+                  )}
                 </div>
-              )}
-            </div>
-          ))
+              ))}
+
+            {/* Latest query */}
+            {latestAssistant && (() => {
+              const latestIdx = messages.findIndex((m) => m.id === latestAssistant.id)
+              const latestQuery = latestIdx > 0 ? messages[latestIdx - 1] : null
+              return latestQuery ? (
+                <div className="chat-current-query">{latestQuery.content}</div>
+              ) : null
+            })()}
+
+            {/* Tab content for latest response */}
+            {latestAssistant && (
+              <>
+                {activeTab === 'answer' && (
+                  <AnswerTab
+                    answer={latestAssistant.content}
+                    isStreaming={latestAssistant.isStreaming}
+                    error={null}
+                  />
+                )}
+                {activeTab === 'sources' && (
+                  <SourcesTab
+                    articles={citedArticles}
+                    isLoading={latestAssistant.isStreaming && !latestAssistant.articles.length}
+                  />
+                )}
+                {activeTab === 'assets' && (
+                  <AssetsTab
+                    assets={latestAssistant.assets}
+                    isLoading={latestAssistant.isStreaming && !latestAssistant.assets.length}
+                  />
+                )}
+              </>
+            )}
+          </div>
         )}
         <div ref={bottomRef} />
       </div>
