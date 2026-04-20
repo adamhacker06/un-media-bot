@@ -2,8 +2,8 @@
 FastAPI application entry point for the UN Media Bot backend.
 
 Routes:
-    GET  /health   – liveness probe
-    POST /chat     – streaming RAG query (SSE)
+    GET  /health  – liveness probe
+    POST /chat    – streaming RAG query (SSE)
 """
 
 from fastapi import FastAPI
@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from .rag import query_once, stream_query
+from .rag import stream_query
 
 app = FastAPI(title="UN Media Bot API", version="1.0.0")
 
@@ -28,25 +28,19 @@ app.add_middleware(
 )
 
 
+class HistoryMessage(BaseModel):
+    role: str    # "user" | "model"
+    content: str
+
+
 class ChatRequest(BaseModel):
     query: str
+    history: list[HistoryMessage] = []
 
 
 @app.get("/health")
 def health() -> dict:
-    """Liveness probe."""
     return {"status": "ok"}
-
-
-@app.post("/query")
-async def query(request: ChatRequest):
-    """
-    Non-streaming RAG query. Returns a single JSON response — easy to test with curl or Postman.
-
-    Response shape:
-        {"answer": "...", "articles": [...], "assets": [...]}
-    """
-    return await query_once(request.query)
 
 
 @app.post("/chat")
@@ -59,8 +53,9 @@ async def chat(request: ChatRequest):
         {"type": "sources", "articles": [...], "assets": [...]}
         {"type": "error",   "message": "..."}
     """
+    history = [{"role": m.role, "content": m.content} for m in request.history]
     return StreamingResponse(
-        stream_query(request.query),
+        stream_query(request.query, history),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

@@ -1,6 +1,5 @@
 fastapi
 uvicorn[standard]
-pinecone
-openai
+pinecone[inference]
+google-generativeai
 python-dotenv
-ollama
