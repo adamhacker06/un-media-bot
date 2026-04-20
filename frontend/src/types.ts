@@ -21,9 +21,24 @@ export interface ChatHistoryItem {
   query: string;
 }
 
+// A single turn in the visible conversation
+export interface Message {
+  id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  articles: Article[];
+  assets: Asset[];
+  isStreaming: boolean;
+}
+
+// What we send to the backend for multi-turn context
+export interface HistoryMessage {
+  role: 'user' | 'model';
+  content: string;
+}
+
 export type TabId = 'answer' | 'sources' | 'assets';
 
-// SSE event shapes from the backend
 export type SseEvent =
   | { type: 'token'; content: string }
   | { type: 'sources'; articles: Article[]; assets: Asset[] }

@@ -1,50 +1,72 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import Sidebar from './components/Sidebar.tsx'
-import SearchHome from './components/SearchHome.tsx'
-import ResultsView from './components/ResultsView.tsx'
-import type { Article, Asset, ChatHistoryItem, SseEvent } from './types.ts'
+import ChatView from './components/ChatView.tsx'
+import type { Article, Asset, ChatHistoryItem, HistoryMessage, Message, SseEvent } from './types.ts'
 
 const API_BASE = '/api'
-
-let chatIdCounter = 0
+let msgId = 0
 
 export default function App() {
-  const [query, setQuery]             = useState<string>('')
-  const [answer, setAnswer]           = useState<string>('')
-  const [articles, setArticles]       = useState<Article[]>([])
-  const [assets, setAssets]           = useState<Asset[]>([])
-  const [isStreaming, setIsStreaming]  = useState<boolean>(false)
-  const [error, setError]             = useState<string | null>(null)
+  const [messages, setMessages]       = useState<Message[]>([])
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([])
   const [activeChat, setActiveChat]   = useState<number | null>(null)
+  const chatIdRef = useRef(0)
 
-  const hasResult = query !== ''
+  // Build the history array the backend expects (all completed turns so far)
+  function buildHistory(msgs: Message[]): HistoryMessage[] {
+    const history: HistoryMessage[] = []
+    for (const m of msgs) {
+      if (m.isStreaming) continue
+      history.push({
+        role: m.role === 'user' ? 'user' : 'model',
+        content: m.content,
+      })
+    }
+    return history
+  }
 
-  const runQuery = useCallback(async (q: string) => {
-    setQuery(q)
-    setAnswer('')
-    setArticles([])
-    setAssets([])
-    setError(null)
-    setIsStreaming(true)
+  const sendMessage = useCallback(async (query: string) => {
+    // Add user message immediately
+    const userMsg: Message = {
+      id: ++msgId,
+      role: 'user',
+      content: query,
+      articles: [],
+      assets: [],
+      isStreaming: false,
+    }
+    const assistantMsg: Message = {
+      id: ++msgId,
+      role: 'assistant',
+      content: '',
+      articles: [],
+      assets: [],
+      isStreaming: true,
+    }
 
-    const id = ++chatIdCounter
-    setActiveChat(id)
-    setChatHistory((prev) => [{ id, query: q }, ...prev.slice(0, 19)])
+    setMessages((prev) => {
+      const next = [...prev, userMsg, assistantMsg]
+      // Kick off the fetch using the snapshot
+      void fetchResponse(query, buildHistory(prev), assistantMsg.id)
+      return next
+    })
 
+    // Track in sidebar history
+    const chatId = ++chatIdRef.current
+    setActiveChat(chatId)
+    setChatHistory((prev) => [{ id: chatId, query }, ...prev.slice(0, 19)])
+  }, [])
+
+  async function fetchResponse(query: string, history: HistoryMessage[], assistantId: number) {
     try {
       const res = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q }),
+        body: JSON.stringify({ query, history }),
       })
 
-      if (!res.ok) {
-        throw new Error(`Server error ${res.status}: ${await res.text()}`)
-      }
-      if (!res.body) {
-        throw new Error('No response body received')
-      }
+      if (!res.ok) throw new Error(`Server error ${res.status}: ${await res.text()}`)
+      if (!res.body) throw new Error('No response body')
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
@@ -55,7 +77,6 @@ export default function App() {
         if (done) break
 
         buffer += decoder.decode(value, { stream: true })
-
         const parts = buffer.split('\n\n')
         buffer = parts.pop() ?? ''
 
@@ -64,47 +85,53 @@ export default function App() {
           if (!line.startsWith('data:')) continue
           const raw = line.slice(5).trim()
           if (raw === '[DONE]') {
-            setIsStreaming(false)
+            setMessages((prev) =>
+              prev.map((m) => m.id === assistantId ? { ...m, isStreaming: false } : m)
+            )
             continue
           }
 
           let event: SseEvent
-          try {
-            event = JSON.parse(raw) as SseEvent
-          } catch {
-            continue
-          }
+          try { event = JSON.parse(raw) as SseEvent } catch { continue }
 
           if (event.type === 'token') {
-            setAnswer((prev) => prev + event.content)
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, content: m.content + event.content } : m
+              )
+            )
           } else if (event.type === 'sources') {
-            setArticles(event.articles)
-            setAssets(event.assets)
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, articles: event.articles as Article[], assets: event.assets as Asset[] }
+                  : m
+              )
+            )
           } else if (event.type === 'error') {
-            setError(event.message)
-            setIsStreaming(false)
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, content: `Error: ${event.message}`, isStreaming: false }
+                  : m
+              )
+            )
           }
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setIsStreaming(false)
+      const msg = err instanceof Error ? err.message : String(err)
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId ? { ...m, content: `Error: ${msg}`, isStreaming: false } : m
+        )
+      )
     }
-  }, [])
-
-  function handleNewChat() {
-    setQuery('')
-    setAnswer('')
-    setArticles([])
-    setAssets([])
-    setError(null)
-    setIsStreaming(false)
-    setActiveChat(null)
   }
 
-  function handleSelectChat(id: number) {
-    setActiveChat(id)
+  function handleNewChat() {
+    setMessages([])
+    setActiveChat(null)
   }
 
   return (
@@ -113,26 +140,9 @@ export default function App() {
         chatHistory={chatHistory}
         activeChat={activeChat}
         onNewChat={handleNewChat}
-        onSelectChat={handleSelectChat}
+        onSelectChat={setActiveChat}
       />
-      <div className="main">
-        <div className="topbar">
-          <div className="lang-selector">EN ▾</div>
-        </div>
-        {hasResult ? (
-          <ResultsView
-            query={query}
-            answer={answer}
-            articles={articles}
-            assets={assets}
-            isStreaming={isStreaming}
-            error={error}
-            onNewQuery={runQuery}
-          />
-        ) : (
-          <SearchHome onSubmit={runQuery} isLoading={isStreaming} />
-        )}
-      </div>
+      <ChatView messages={messages} onSend={sendMessage} />
     </div>
   )
 }
