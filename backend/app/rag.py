@@ -28,8 +28,7 @@ import logging
 from dataclasses import asdict, dataclass
 from typing import AsyncGenerator
 
-from google import genai
-from google.genai import types as genai_types
+from openai import OpenAI
 from pinecone import Pinecone
 
 from . import config
@@ -214,34 +213,26 @@ async def stream_query(
             "Answer based on the context above, citing every factual claim."
         )
 
-        # 5. Build Gemini conversation history + stream
-        client = genai.Client(api_key=config.GEMINI_API_KEY)
+        # 5. Stream via Groq (OpenAI-compatible)
+        groq = OpenAI(api_key=config.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
 
-        contents: list[genai_types.Content] = [
-            genai_types.Content(
-                role=msg["role"],
-                parts=[genai_types.Part(text=msg["content"])],
-            )
-            for msg in history
-        ]
-        contents.append(
-            genai_types.Content(role="user", parts=[genai_types.Part(text=user_prompt)])
-        )
-
-        cfg = genai_types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            temperature=0.2,
-            max_output_tokens=1024,
-        )
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        for msg in history:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+        messages.append({"role": "user", "content": user_prompt})
 
         # 6. Stream response
-        for chunk in client.models.generate_content_stream(
+        stream = groq.chat.completions.create(
             model=config.LLM_MODEL,
-            contents=contents,
-            config=cfg,
-        ):
-            if chunk.text:
-                yield f"data: {json.dumps({'type': 'token', 'content': chunk.text})}\n\n"
+            messages=messages,
+            stream=True,
+            temperature=0.2,
+            max_tokens=1024,
+        )
+        for chunk in stream:
+            content = chunk.choices[0].delta.content
+            if content:
+                yield f"data: {json.dumps({'type': 'token', 'content': content})}\n\n"
 
         # 7. Emit sources
         yield f"data: {json.dumps({'type': 'sources', 'articles': [asdict(a) for a in articles], 'assets': [asdict(a) for a in assets]})}\n\n"
