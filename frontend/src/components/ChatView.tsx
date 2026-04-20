@@ -15,7 +15,7 @@ function MessageTabs({
   const hasArticles = message.articles.length > 0
   const hasAssets = message.assets.length > 0
 
-  if (!hasArticles && !hasAssets && !message.isStreaming) return null
+  if (!message.content && !message.isStreaming) return null
 
   return (
     <div className="msg-tabs-wrap">

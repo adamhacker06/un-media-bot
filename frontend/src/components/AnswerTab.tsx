@@ -1,3 +1,11 @@
+// Strip Qwen's chain-of-thought <think>...</think> blocks before display.
+// While the block is still open (streaming), show skeleton instead of raw reasoning.
+function stripThink(raw: string): { text: string; thinking: boolean } {
+  const closed = raw.replace(/<think>[\s\S]*?<\/think>\s*/g, '')
+  const stillOpen = /<think>/.test(raw) && !raw.includes('</think>')
+  return { text: closed.trimStart(), thinking: stillOpen }
+}
+
 function SkeletonLines() {
   const widths = [100, 88, 94, 70, 85, 60]
   return (
@@ -31,7 +39,10 @@ export default function AnswerTab({ answer, isStreaming, error }: AnswerTabProps
     )
   }
 
-  if (!answer && isStreaming) {
+  const { text, thinking } = stripThink(answer)
+
+  // Show skeleton while model is thinking or while stream hasn't started yet
+  if (thinking || (!text && isStreaming)) {
     return (
       <div className="tab-content">
         <SkeletonLines />
@@ -39,7 +50,7 @@ export default function AnswerTab({ answer, isStreaming, error }: AnswerTabProps
     )
   }
 
-  if (!answer) {
+  if (!text) {
     return (
       <div className="tab-content">
         <div className="empty-state">
@@ -54,7 +65,7 @@ export default function AnswerTab({ answer, isStreaming, error }: AnswerTabProps
     <div className="tab-content">
       <div className="answer-body">
         <div className="answer-text">
-          {answer}
+          {text}
           {isStreaming && <span className="cursor-blink" />}
         </div>
       </div>
