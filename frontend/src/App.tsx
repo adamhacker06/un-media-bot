@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import Sidebar from './components/Sidebar.tsx'
 import ChatView from './components/ChatView.tsx'
 import type { Article, Asset, ChatHistoryItem, HistoryMessage, Message, SseEvent } from './types.ts'
@@ -10,51 +10,43 @@ export default function App() {
   const [messages, setMessages]       = useState<Message[]>([])
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([])
   const [activeChat, setActiveChat]   = useState<number | null>(null)
-  const chatIdRef = useRef(0)
+  const chatIdRef   = useRef(0)
+  const messagesRef = useRef<Message[]>([])   // mirror of messages for reading in callbacks
 
-  // Build the history array the backend expects (all completed turns so far)
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
   function buildHistory(msgs: Message[]): HistoryMessage[] {
-    const history: HistoryMessage[] = []
-    for (const m of msgs) {
-      if (m.isStreaming) continue
-      history.push({
-        role: m.role === 'user' ? 'user' : 'model',
-        content: m.content,
-      })
-    }
-    return history
+    return msgs
+      .filter((m) => !m.isStreaming)
+      .map((m) => ({ role: m.role === 'user' ? 'user' : 'model', content: m.content }))
   }
 
   const sendMessage = useCallback(async (query: string) => {
-    // Add user message immediately
     const userMsg: Message = {
-      id: ++msgId,
-      role: 'user',
-      content: query,
-      articles: [],
-      assets: [],
-      isStreaming: false,
+      id: ++msgId, role: 'user', content: query,
+      articles: [], assets: [], isStreaming: false,
     }
+    const assistantId = ++msgId
     const assistantMsg: Message = {
-      id: ++msgId,
-      role: 'assistant',
-      content: '',
-      articles: [],
-      assets: [],
-      isStreaming: true,
+      id: assistantId, role: 'assistant', content: '',
+      articles: [], assets: [], isStreaming: true,
     }
 
-    setMessages((prev) => {
-      const next = [...prev, userMsg, assistantMsg]
-      // Kick off the fetch using the snapshot
-      void fetchResponse(query, buildHistory(prev), assistantMsg.id)
-      return next
-    })
+    // Read history from ref — safe to do outside setState
+    const history = buildHistory(messagesRef.current)
 
-    // Track in sidebar history
+    // Add both messages to state — no side effects inside the updater
+    setMessages((prev) => [...prev, userMsg, assistantMsg])
+
+    // Fire fetch outside setState to avoid StrictMode double-call
+    void fetchResponse(query, history, assistantId)
+
     const chatId = ++chatIdRef.current
     setActiveChat(chatId)
     setChatHistory((prev) => [{ id: chatId, query }, ...prev.slice(0, 19)])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function fetchResponse(query: string, history: HistoryMessage[], assistantId: number) {
