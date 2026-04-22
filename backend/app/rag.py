@@ -133,6 +133,28 @@ Answer using only the retrieved document chunks provided. If they don't contain 
 _ASSET_TYPES = {"image", "video", "photo", "asset", "media", "graphic"}
 
 
+def _source_display_name(source_field: str) -> str:
+    """Convert a URL or body name to a short display label."""
+    if not source_field or not source_field.startswith("http"):
+        return source_field or "UN"
+    from urllib.parse import urlparse
+    host = urlparse(source_field).netloc.lower().removeprefix("www.")
+    _HOST_MAP = {
+        "news.un.org": "UN News",
+        "press.un.org": "UN Press",
+        "media.un.org": "UN Media",
+        "un.org": "UN",
+        "unhcr.org": "UNHCR",
+        "unicef.org": "UNICEF",
+        "wfp.org": "WFP",
+        "who.int": "WHO",
+    }
+    for domain, label in _HOST_MAP.items():
+        if host.endswith(domain):
+            return label
+    return host
+
+
 def _categorise_matches(matches) -> tuple[list[Article], list[Asset], list[str]]:
     articles: list[Article] = []
     assets: list[Asset] = []
@@ -148,8 +170,13 @@ def _categorise_matches(matches) -> tuple[list[Article], list[Asset], list[str]]
         if text:
             context_chunks.append(f"[{title}]\n{text}")
 
+        # The incoming JSON stores the document URL in "source"; "url" may be absent.
+        raw_source: str = meta.get("source", "")
+        url: str = meta.get("url", raw_source)  # fall back to source if url missing
+        source_label: str = _source_display_name(raw_source)
+
         if doc_type in _ASSET_TYPES:
-            raw_url = meta.get("asset_url", meta.get("url", ""))
+            raw_url = meta.get("asset_url", url)
             assets.append(Asset(
                 title=title,
                 asset_url=raw_url,
@@ -162,10 +189,10 @@ def _categorise_matches(matches) -> tuple[list[Article], list[Asset], list[str]]
             excerpt = text[:300] + "…" if len(text) > 300 else text
             articles.append(Article(
                 title=title,
-                url=meta.get("url", ""),
+                url=url,
                 date=meta.get("date", ""),
                 excerpt=excerpt,
-                source=meta.get("source", "UN"),
+                source=source_label,
                 score=round(score, 3),
             ))
 
