@@ -319,7 +319,8 @@ async def stream_query(
 
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         for msg in history:
-            messages.append({"role": msg["role"], "content": msg["content"]})
+            role = "assistant" if msg["role"] == "model" else msg["role"]
+            messages.append({"role": role, "content": msg["content"]})
         messages.append({"role": "user", "content": user_prompt})
 
         # 6. Stream response

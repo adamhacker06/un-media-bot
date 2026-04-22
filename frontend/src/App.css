@@ -665,12 +665,90 @@ html, body, #root {
   font-size: 14.5px;
   line-height: 1.75;
   color: var(--text-primary);
-  white-space: pre-wrap;
   word-break: break-word;
 }
 
-.answer-text p {
+/* ── Markdown elements ─────────────────────────────────── */
+
+.md-p {
   margin-bottom: 14px;
+}
+
+.md-h2 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin: 22px 0 10px;
+  color: var(--text-primary);
+}
+
+.md-h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 18px 0 8px;
+  color: var(--text-primary);
+}
+
+.md-ul,
+.md-ol {
+  padding-left: 20px;
+  margin-bottom: 14px;
+}
+
+.md-ul {
+  list-style: disc;
+}
+
+.md-ol {
+  list-style: decimal;
+}
+
+.md-li {
+  margin-bottom: 5px;
+  line-height: 1.65;
+}
+
+.md-inline-code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--text-primary);
+}
+
+.md-pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin-bottom: 14px;
+}
+
+.md-code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.md-blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 14px;
+  margin: 0 0 14px;
+  color: var(--text-secondary);
+}
+
+.md-hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 20px 0;
+}
+
+.md-strong {
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .citation-badge {

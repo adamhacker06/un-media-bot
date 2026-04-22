@@ -1,48 +1,62 @@
-import type { ReactNode } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import type { Components } from 'react-markdown'
 
-// Strip Qwen's chain-of-thought <think>...</think> blocks before display.
-// While the block is still open (streaming), show skeleton instead of raw reasoning.
 function stripThink(raw: string): { text: string; thinking: boolean } {
   const closed = raw.replace(/<think>[\s\S]*?<\/think>\s*/g, '')
   const stillOpen = /<think>/.test(raw) && !raw.includes('</think>')
   return { text: closed.trimStart(), thinking: stillOpen }
 }
 
-// Matches: [Source: title, date — https://...]
+// Convert [Source: title, date — URL] → markdown link [domain](URL)
 const CITATION_RE = /\[Source:\s*[^\]—]+?,\s*[^—\]]+?\s*—\s*(https?:\/\/[^\]]+?)\]/g
 
-function CitationBadge({ url }: { url: string }) {
-  let label = url
-  try {
-    label = new URL(url).hostname.replace(/^www\./, '')
-  } catch {
-    // keep raw url as label
-  }
-  return (
-    <a
-      className="citation-badge"
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {label}
-    </a>
-  )
+function preprocessCitations(text: string): string {
+  return text.replace(CITATION_RE, (_, url: string) => {
+    const trimmed = url.trim()
+    let label = trimmed
+    try { label = new URL(trimmed).hostname.replace(/^www\./, '') } catch { /* keep raw */ }
+    return `[${label}](${trimmed})`
+  })
 }
 
-function renderWithCitations(text: string): ReactNode[] {
-  const nodes: ReactNode[] = []
-  let last = 0
-  let ci = 0
-  CITATION_RE.lastIndex = 0
-  let m: RegExpExecArray | null
-  while ((m = CITATION_RE.exec(text)) !== null) {
-    if (m.index > last) nodes.push(text.slice(last, m.index))
-    nodes.push(<CitationBadge key={ci++} url={m[1].trim()} />)
-    last = m.index + m[0].length
-  }
-  if (last < text.length) nodes.push(text.slice(last))
-  return nodes
+const mdComponents: Components = {
+  // Citation badges + normal links
+  a({ href, children }) {
+    return (
+      <a
+        className="citation-badge"
+        href={href ?? '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {children}
+      </a>
+    )
+  },
+  // Tighten headings
+  h1({ children }) { return <h2 className="md-h2">{children}</h2> },
+  h2({ children }) { return <h2 className="md-h2">{children}</h2> },
+  h3({ children }) { return <h3 className="md-h3">{children}</h3> },
+  // Paragraphs
+  p({ children }) { return <p className="md-p">{children}</p> },
+  // Lists
+  ul({ children }) { return <ul className="md-ul">{children}</ul> },
+  ol({ children }) { return <ol className="md-ol">{children}</ol> },
+  li({ children }) { return <li className="md-li">{children}</li> },
+  // Inline code
+  code({ children, className }) {
+    const isBlock = !!className
+    return isBlock
+      ? <pre className="md-pre"><code className="md-code">{children}</code></pre>
+      : <code className="md-inline-code">{children}</code>
+  },
+  // Blockquote
+  blockquote({ children }) { return <blockquote className="md-blockquote">{children}</blockquote> },
+  // Horizontal rule
+  hr() { return <hr className="md-hr" /> },
+  // Strong / em
+  strong({ children }) { return <strong className="md-strong">{children}</strong> },
 }
 
 function SkeletonLines() {
@@ -99,11 +113,15 @@ export default function AnswerTab({ answer, isStreaming, error }: AnswerTabProps
     )
   }
 
+  const processed = preprocessCitations(text)
+
   return (
     <div className="tab-content">
       <div className="answer-body">
         <div className="answer-text">
-          {renderWithCitations(text)}
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+            {processed}
+          </ReactMarkdown>
           {isStreaming && <span className="cursor-blink" />}
         </div>
       </div>
