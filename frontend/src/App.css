@@ -751,31 +751,146 @@ html, body, #root {
   color: var(--text-primary);
 }
 
-/* Perplexity-style superscript number badge */
-.cite-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--un-blue-dark);
-  text-decoration: none;
-  vertical-align: super;
-  line-height: 1;
-  margin: 0 1px;
-  flex-shrink: 0;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+/* ── Citation badges (Perplexity-style) ────────────────── */
+
+.cite-wrap {
+  position: relative;
+  display: inline;
 }
 
-.cite-num:hover {
-  background: #ddeaf8;
-  border-color: var(--un-blue);
-  color: var(--un-blue);
+/* Pill badge: "news.un.org +2" */
+.cite-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px 2px;
+  margin: 0 2px;
+  background: #1c1c1e;
+  color: #d4d4d4;
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font);
+  cursor: pointer;
+  vertical-align: middle;
+  line-height: 1.6;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.cite-badge:hover {
+  background: #2c2c2e;
+}
+
+/* Popover card */
+.cite-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  min-width: 280px;
+  max-width: 360px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.13);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Nav bar (only shown when >1 source) */
+.cite-popover-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.cite-nav-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+  transition: background 0.1s;
+}
+
+.cite-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.cite-nav-btn:not(:disabled):hover {
+  background: var(--surface);
+}
+
+.cite-nav-pos {
+  font-weight: 500;
+  color: var(--text-primary);
+  min-width: 32px;
+}
+
+.cite-nav-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Source body — the whole card is a link */
+.cite-popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 13px 14px 14px;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+
+.cite-popover-body:hover {
+  background: var(--surface);
+}
+
+.cite-popover-domain {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.cite-popover-domain img {
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.cite-popover-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cite-popover-date {
+  font-size: 11.5px;
+  color: var(--text-muted);
 }
 
 /* Regular inline links (non-citation) */

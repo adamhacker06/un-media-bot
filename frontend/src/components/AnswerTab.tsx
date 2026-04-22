@@ -1,6 +1,21 @@
+import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Components } from 'react-markdown'
+
+// ─── Types ───────────────────────────────────────────────
+
+interface Citation {
+  title: string
+  date: string
+  url: string
+}
+
+interface CiteGroup {
+  citations: Citation[]
+}
+
+// ─── Text helpers ─────────────────────────────────────────
 
 function stripThink(raw: string): { text: string; thinking: boolean } {
   const closed = raw.replace(/<think>[\s\S]*?<\/think>\s*/g, '')
@@ -8,49 +23,124 @@ function stripThink(raw: string): { text: string; thinking: boolean } {
   return { text: closed.trimStart(), thinking: stillOpen }
 }
 
-const CITATION_RE = /\[Source:\s*[^\]—]+?,\s*[^—\]]+?\s*—\s*(https?:\/\/[^\]]+?)\]/g
+const SINGLE_CITE_RE = /\[Source:\s*([^,\]—]+?),\s*([^—\]]+?)\s*—\s*(https?:\/\/[^\]]+?)\]/g
+// Matches one or more back-to-back [Source: ...] blocks
+const GROUP_RE = /(?:\[Source:\s*[^\]—]+?,\s*[^—\]]+?\s*—\s*https?:\/\/[^\]]+?\])+/g
 
-// Replace [Source: ..., ... — URL] with numbered markdown links [1](URL).
-// Returns the processed text and the ordered URL list so components can
-// look up each number by href.
-function preprocessCitations(text: string): { md: string; urls: string[] } {
-  const urls: string[] = []
-  const md = text.replace(CITATION_RE, (_, url: string) => {
-    const href = url.trim()
-    let idx = urls.indexOf(href)
-    if (idx === -1) { idx = urls.length; urls.push(href) }
-    return `[${idx + 1}](${href})`
-  })
-  return { md, urls }
+function getDomain(url: string): string {
+  try { return new URL(url).hostname.replace(/^www\./, '') } catch { return url }
 }
 
-function makeMdComponents(urls: string[]): Components {
-  return {
-    a({ href, children }) {
-      const num = Number(String(children))
-      const isCitation = Number.isInteger(num) && num >= 1 && num <= urls.length && href === urls[num - 1]
+function preprocessCitations(text: string): { md: string; groups: CiteGroup[] } {
+  const groups: CiteGroup[] = []
 
-      if (isCitation) {
-        return (
+  const md = text.replace(GROUP_RE, (groupMatch) => {
+    const citations: Citation[] = []
+    SINGLE_CITE_RE.lastIndex = 0
+    let m: RegExpExecArray | null
+    while ((m = SINGLE_CITE_RE.exec(groupMatch)) !== null) {
+      citations.push({ title: m[1].trim(), date: m[2].trim(), url: m[3].trim() })
+    }
+    const idx = groups.length
+    groups.push({ citations })
+
+    const domain = getDomain(citations[0].url)
+    const extra = citations.length > 1 ? ` +${citations.length - 1}` : ''
+    // Encode as a fake URL so react-markdown treats it as a link
+    return `[${domain}${extra}](cite://${idx})`
+  })
+
+  return { md, groups }
+}
+
+// ─── Citation popover component ───────────────────────────
+
+function CitationBadge({ label, group }: { label: string; group: CiteGroup }) {
+  const [open, setOpen] = useState(false)
+  const [page, setPage] = useState(0)
+  const ref = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  // Reset page when closed
+  useEffect(() => { if (!open) setPage(0) }, [open])
+
+  const cite = group.citations[page]
+  const domain = getDomain(cite.url)
+  const total = group.citations.length
+
+  return (
+    <span ref={ref} className="cite-wrap">
+      <button
+        className="cite-badge"
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+      >
+        {label}
+      </button>
+
+      {open && (
+        <span className="cite-popover" role="dialog">
+          {total > 1 && (
+            <span className="cite-popover-nav">
+              <button
+                className="cite-nav-btn"
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+              >‹</button>
+              <span className="cite-nav-pos">{page + 1} / {total}</span>
+              <button
+                className="cite-nav-btn"
+                onClick={() => setPage(p => Math.min(total - 1, p + 1))}
+                disabled={page === total - 1}
+              >›</button>
+              <span className="cite-nav-count">{total} sources</span>
+            </span>
+          )}
+
           <a
-            className="cite-num"
-            href={href}
+            className="cite-popover-body"
+            href={cite.url}
             target="_blank"
             rel="noopener noreferrer"
-            title={href}
           >
-            {num}
+            <span className="cite-popover-domain">
+              <img
+                src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
+                width={14}
+                height={14}
+                alt=""
+              />
+              {domain}
+            </span>
+            <span className="cite-popover-title">{cite.title}</span>
+            {cite.date && <span className="cite-popover-date">{cite.date}</span>}
           </a>
-        )
-      }
+        </span>
+      )}
+    </span>
+  )
+}
 
+// ─── Markdown component map ───────────────────────────────
+
+function makeMdComponents(groups: CiteGroup[]): Components {
+  return {
+    a({ href, children }) {
+      if (href?.startsWith('cite://')) {
+        const idx = parseInt(href.slice(7), 10)
+        const group = groups[idx]
+        if (group) return <CitationBadge label={String(children)} group={group} />
+      }
       return (
-        <a
-          className="md-link"
-          href={href ?? '#'}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a className="md-link" href={href ?? '#'} target="_blank" rel="noopener noreferrer">
           {children}
         </a>
       )
@@ -73,6 +163,8 @@ function makeMdComponents(urls: string[]): Components {
   }
 }
 
+// ─── Skeleton ─────────────────────────────────────────────
+
 function SkeletonLines() {
   const widths = [100, 88, 94, 70, 85, 60]
   return (
@@ -83,6 +175,8 @@ function SkeletonLines() {
     </div>
   )
 }
+
+// ─── Main component ───────────────────────────────────────
 
 interface AnswerTabProps {
   answer: string
@@ -116,8 +210,8 @@ export default function AnswerTab({ answer, isStreaming, error }: AnswerTabProps
     )
   }
 
-  const { md, urls } = preprocessCitations(text)
-  const components = makeMdComponents(urls)
+  const { md, groups } = preprocessCitations(text)
+  const components = makeMdComponents(groups)
 
   return (
     <div className="tab-content">
