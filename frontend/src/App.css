@@ -751,28 +751,41 @@ html, body, #root {
   color: var(--text-primary);
 }
 
-.citation-badge {
+/* Perplexity-style superscript number badge */
+.cite-num {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 1px 7px 2px;
-  margin: 0 2px;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  font-size: 11.5px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 600;
   color: var(--un-blue-dark);
   text-decoration: none;
-  white-space: nowrap;
-  vertical-align: middle;
-  line-height: 1.6;
-  transition: background 0.15s, border-color 0.15s;
+  vertical-align: super;
+  line-height: 1;
+  margin: 0 1px;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.citation-badge:hover {
-  background: #e8f0fa;
+.cite-num:hover {
+  background: #ddeaf8;
   border-color: var(--un-blue);
+  color: var(--un-blue);
+}
+
+/* Regular inline links (non-citation) */
+.md-link {
+  color: var(--un-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.md-link:hover {
   color: var(--un-blue-dark);
 }
 
