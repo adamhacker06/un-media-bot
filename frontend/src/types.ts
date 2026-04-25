@@ -16,8 +16,26 @@ export interface Asset {
   description: string;
 }
 
-export interface ChatHistoryItem {
+// Stored in Firestore (no transient streaming flag)
+export interface StoredMessage {
   id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  articles: Article[];
+  assets: Asset[];
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: StoredMessage[];
+  deviceId: string;
+}
+
+export interface ChatHistoryItem {
+  id: string;
   query: string;
 }
 
