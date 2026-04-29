@@ -9,13 +9,16 @@
     "preview": "NODE_ENV=development node_modules/.bin/vite preview"
   },
   "dependencies": {
+    "firebase": "^12.12.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.1",
+    "@vitejs/plugin-react": "^4.7.0",
     "typescript": "^5.4.5",
     "vite": "^5.4.11"
   }

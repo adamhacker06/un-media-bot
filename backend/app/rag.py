@@ -115,15 +115,16 @@ WRITING RULES
 7. Match your urgency to theirs — short when you're on deadline, fuller context when you're researching.
 
 CITATION RULES — MANDATORY
-Cite every factual claim inline, immediately after the relevant statement:
-[Source: <document symbol or title>, <date> — <URL>]
+Cite every factual claim using the numbered source reference, e.g. [1], [2].
+Place the bracketed number immediately after the claim it supports.
+Multiple citations can appear together: [1][2].
 
-- Use only URLs present in the retrieved source data. Do not fabricate or paraphrase URLs.
-- If no URL is available: "Direct link unavailable — contact undocs.org or the Press Office."
-- For media assets, include the direct asset URL.
+- Use AT LEAST 3 DIFFERENT sources when the context provides them.
+- Do NOT write out source titles, dates, or URLs inline. Only use the bracketed number.
+- Never fabricate a source number that was not provided in the context.
 
 CONTEXT
-Answer using only the retrieved document chunks provided. If they don't contain enough to answer fully, say so clearly and tell the journalist exactly where to look next."""
+Answer using only the numbered source chunks provided. Draw on ALL sources — do not ignore any. If the sources don't contain enough to answer fully, say so and tell the journalist where to look next."""
 
 
 # ---------------------------------------------------------------------------
@@ -305,13 +306,50 @@ async def stream_query(
             assets   = _MOCK_ASSETS
             context_text = _MOCK_CONTEXT + "\n\n[NOTE: These are sample fixtures — no live documents are indexed yet.]"
         else:
-            context_text = "\n\n---\n\n".join(context_chunks[:6])
+            # Prefer chunks from different document titles to maximise source diversity
+            used_chunks: list[str] = []
+            seen_titles: set[str] = set()
+            leftover: list[str] = []
+            for chunk in context_chunks:
+                title = chunk.split('\n')[0].strip('[]')
+                if title not in seen_titles:
+                    seen_titles.add(title)
+                    used_chunks.append(chunk)
+                else:
+                    leftover.append(chunk)
+                if len(used_chunks) >= 6:
+                    break
+            # Fill remaining slots from same sources if needed
+            for chunk in leftover:
+                if len(used_chunks) >= 6:
+                    break
+                used_chunks.append(chunk)
+
+            # Number chunks by unique source title so the LLM can cite as [1], [2], etc.
+            ordered_articles: list[Article] = []
+            title_to_num: dict[str, int] = {}
+            for chunk in used_chunks:
+                title = chunk.split('\n')[0].strip('[]')
+                if title not in title_to_num:
+                    matched = next((a for a in articles if a.title == title), None)
+                    if matched:
+                        title_to_num[title] = len(ordered_articles) + 1
+                        ordered_articles.append(matched)
+
+            numbered_parts = []
+            for chunk in used_chunks:
+                title = chunk.split('\n')[0].strip('[]')
+                num = title_to_num.get(title, "?")
+                numbered_parts.append(f"[Source {num}] {chunk}")
+
+            context_text = "\n\n---\n\n".join(numbered_parts)
+            articles = ordered_articles
 
         user_prompt = (
             f"Context from UN documents:\n\n{context_text}\n\n"
             f"---\n\n"
             f"Question: {user_query}\n\n"
-            "Answer based on the context above, citing every factual claim."
+            "Answer based on the sources above. Cite every factual claim using its source number [1], [2], etc."
         )
 
         # 5. Stream via Groq (OpenAI-compatible)
@@ -319,7 +357,8 @@ async def stream_query(
 
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         for msg in history:
-            messages.append({"role": msg["role"], "content": msg["content"]})
+            role = "assistant" if msg["role"] == "model" else msg["role"]
+            messages.append({"role": role, "content": msg["content"]})
         messages.append({"role": "user", "content": user_prompt})
 
         # 6. Stream response
