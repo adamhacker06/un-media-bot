@@ -26,7 +26,7 @@ Pinecone metadata schema per vector:
 import json
 import logging
 from dataclasses import asdict, dataclass
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
 from openai import OpenAI
 from pinecone import Pinecone
@@ -64,7 +64,7 @@ class Asset:
 # Lazy singletons
 # ---------------------------------------------------------------------------
 
-_pc: Pinecone | None = None
+_pc: Optional[Pinecone] = None
 _pinecone_index = None
 
 
