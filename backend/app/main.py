@@ -1,21 +1,72 @@
 """
 FastAPI application entry point for the UN Media Bot backend.
 
-This module defines the `app` object that Uvicorn serves. It is intentionally
-minimal right now — only a `/health` route is wired up. Future routes
-(e.g. `POST /chat`) will import `query()` from `rag.py` and expose the RAG
-pipeline to the frontend.
-
-Run locally:
-    uvicorn app.main:app --reload
+Routes:
+    GET  /health  – liveness probe
+    POST /chat    – streaming RAG query (SSE)
 """
 
-from fastapi import FastAPI
+import logging
 
-app = FastAPI(title="UN Media Bot API")
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+
+from .rag import stream_query
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(levelname)s  %(name)s  %(message)s",
+)
+
+app = FastAPI(title="UN Media Bot API", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class HistoryMessage(BaseModel):
+    role: str    # "user" | "model"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    query: str
+    history: list[HistoryMessage] = []
 
 
 @app.get("/health")
 def health() -> dict:
-    """Liveness probe — returns a static OK payload."""
     return {"status": "ok"}
+
+
+@app.post("/chat")
+async def chat(request: ChatRequest):
+    """
+    Stream a RAG-grounded answer plus structured sources via SSE.
+
+    Emits newline-delimited JSON events:
+        {"type": "token",   "content": "..."}
+        {"type": "sources", "articles": [...], "assets": [...]}
+        {"type": "error",   "message": "..."}
+    """
+    history = [{"role": m.role, "content": m.content} for m in request.history]
+    return StreamingResponse(
+        stream_query(request.query, history),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
