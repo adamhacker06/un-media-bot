@@ -5,24 +5,22 @@ function getDomain(url: string): string {
 }
 
 function SourceCard({ article, index }: { article: Article; index: number }) {
-  const domain = getDomain(article.url)
-  return (
-    <a
-      className="source-card-perp"
-      href={article.url}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
+  const hasUrl = article.url.startsWith('http')
+  const domain = hasUrl ? getDomain(article.url) : article.source || 'UN'
+  const inner = (
+    <>
       <span className="scp-num">{index + 1}</span>
       <div className="scp-body">
         <div className="scp-meta">
-          <img
-            src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
-            width={13}
-            height={13}
-            alt=""
-            className="scp-favicon"
-          />
+          {hasUrl && (
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
+              width={13}
+              height={13}
+              alt=""
+              className="scp-favicon"
+            />
+          )}
           <span className="scp-domain">{domain}</span>
           {article.date && <span className="scp-date">{article.date}</span>}
         </div>
@@ -31,7 +29,14 @@ function SourceCard({ article, index }: { article: Article; index: number }) {
           <div className="scp-excerpt">{article.excerpt}</div>
         )}
       </div>
+    </>
+  )
+  return hasUrl ? (
+    <a className="source-card-perp" href={article.url} target="_blank" rel="noopener noreferrer">
+      {inner}
     </a>
+  ) : (
+    <div className="source-card-perp source-card-perp--no-link">{inner}</div>
   )
 }
 

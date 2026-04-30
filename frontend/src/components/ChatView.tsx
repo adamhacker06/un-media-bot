@@ -148,13 +148,24 @@ export default function ChatView({ messages, onSend, sourcesPanelOpen, onToggleS
         ) : (
           <div className="chat-content-wrap">
             {messages
-              .filter((m) => m.id !== latestAssistant?.id)
+              .filter((m) => {
+                if (m.id === latestAssistant?.id) return false
+                // also exclude the user query immediately before the latest assistant —
+                // it is rendered separately as the "current query" bubble below
+                if (latestAssistant) {
+                  const idx = messages.findIndex((x) => x.id === latestAssistant.id)
+                  if (idx > 0 && messages[idx - 1].id === m.id) return false
+                }
+                return true
+              })
               .map((msg) => (
                 <div key={msg.id} className={`chat-history-msg chat-history-msg--${msg.role}`}>
                   {msg.role === 'user' ? (
                     <span className="chat-history-query">{msg.content}</span>
                   ) : (
-                    <p className="chat-history-answer">{msg.content}</p>
+                    <p className="chat-history-answer">
+                      {msg.content.replace(/<think>[\s\S]*?<\/think>\s*/gi, '').trimStart()}
+                    </p>
                   )}
                 </div>
               ))}

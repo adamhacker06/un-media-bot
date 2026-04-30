@@ -3,11 +3,14 @@ import type { ChatHistoryItem } from '../types.ts'
 interface SidebarProps {
   chatHistory: ChatHistoryItem[]
   activeChat: string | null
+  streamingChatIds: Set<string>
   onNewChat: () => void
   onSelectChat: (id: string) => void
 }
 
-export default function Sidebar({ chatHistory, activeChat, onNewChat, onSelectChat }: SidebarProps) {
+export default function Sidebar({
+  chatHistory, activeChat, streamingChatIds, onNewChat, onSelectChat,
+}: SidebarProps) {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -32,7 +35,10 @@ export default function Sidebar({ chatHistory, activeChat, onNewChat, onSelectCh
               onClick={() => onSelectChat(item.id)}
               title={item.query}
             >
-              {item.query}
+              <span className="sidebar-item-text">{item.query}</span>
+              {streamingChatIds.has(item.id) && (
+                <span className="sidebar-streaming-dot" title="Generating…" />
+              )}
             </div>
           ))}
         </>

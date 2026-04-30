@@ -11,24 +11,22 @@ interface SourcesPanelProps {
 }
 
 function SourceRow({ article, index }: { article: Article; index: number }) {
-  const domain = getDomain(article.url)
-  return (
-    <a
-      className="sp-item"
-      href={article.url}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
+  const hasUrl = article.url.startsWith('http')
+  const domain = hasUrl ? getDomain(article.url) : article.source || 'UN'
+  const inner = (
+    <>
       <span className="sp-item-num">{index + 1}</span>
       <div className="sp-item-body">
         <div className="sp-item-meta">
-          <img
-            src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
-            width={13}
-            height={13}
-            alt=""
-            className="sp-favicon"
-          />
+          {hasUrl && (
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
+              width={13}
+              height={13}
+              alt=""
+              className="sp-favicon"
+            />
+          )}
           <span className="sp-domain">{domain}</span>
           {article.date && <span className="sp-date">{article.date}</span>}
         </div>
@@ -37,7 +35,14 @@ function SourceRow({ article, index }: { article: Article; index: number }) {
           <div className="sp-excerpt">{article.excerpt}</div>
         )}
       </div>
+    </>
+  )
+  return hasUrl ? (
+    <a className="sp-item" href={article.url} target="_blank" rel="noopener noreferrer">
+      {inner}
     </a>
+  ) : (
+    <div className="sp-item sp-item--no-link">{inner}</div>
   )
 }
 

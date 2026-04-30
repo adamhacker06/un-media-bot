@@ -6,12 +6,19 @@ Routes:
     POST /chat    – streaming RAG query (SSE)
 """
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from .rag import stream_query
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(levelname)s  %(name)s  %(message)s",
+)
 
 app = FastAPI(title="UN Media Bot API", version="1.0.0")
 

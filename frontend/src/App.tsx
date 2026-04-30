@@ -24,19 +24,40 @@ function getOrCreateDeviceId(): string {
   return id
 }
 
+function buildHistory(msgs: Message[]): HistoryMessage[] {
+  return msgs
+    .filter((m) => !m.isStreaming)
+    .map((m) => ({ role: m.role === 'user' ? 'user' : 'model', content: m.content }))
+}
+
 export default function App() {
-  const [messages, setMessages]             = useState<Message[]>([])
-  const [chatHistory, setChatHistory]       = useState<ChatHistoryItem[]>([])
-  const [activeChat, setActiveChat]         = useState<string | null>(null)
+  // Per-chat message state: chatId → Message[]
+  // Switching chats never clears this map, so streaming continues in background
+  // and previously loaded chats are instantly available without re-fetching.
+  const [chatMessages, setChatMessages] = useState<Map<string, Message[]>>(new Map())
+  const [chatHistory, setChatHistory]   = useState<ChatHistoryItem[]>([])
+  const [activeChat, setActiveChat]     = useState<string | null>(null)
   const [sourcesPanelOpen, setSourcesPanelOpen] = useState(false)
 
-  const messagesRef      = useRef<Message[]>([])
+  // Stable ref so async callbacks see current map without stale closures
+  const chatMessagesRef = useRef<Map<string, Message[]>>(new Map())
+  useEffect(() => { chatMessagesRef.current = chatMessages }, [chatMessages])
+
   const currentChatIdRef = useRef<string | null>(null)
   const deviceId         = useMemo(getOrCreateDeviceId, [])
 
-  useEffect(() => { messagesRef.current = messages }, [messages])
+  // Messages for the currently viewed chat (empty array = show EmptyState)
+  const messages = activeChat ? (chatMessages.get(activeChat) ?? []) : []
 
-  // Real-time sidebar from Firestore (only when configured)
+  function updateChatMessages(chatId: string, updater: (prev: Message[]) => Message[]) {
+    setChatMessages((prev) => {
+      const next = new Map(prev)
+      next.set(chatId, updater(next.get(chatId) ?? []))
+      return next
+    })
+  }
+
+  // Real-time sidebar from Firestore
   useEffect(() => {
     if (!firebaseEnabled || !db) return
     const q = fsQuery(collection(db, 'chats'), orderBy('updatedAt', 'desc'), limit(30))
@@ -48,17 +69,10 @@ export default function App() {
     })
   }, [deviceId])
 
-  // Close sources panel on new response start
+  // Close sources panel when the active chat starts streaming
   useEffect(() => {
-    const streaming = messages.some((m) => m.isStreaming)
-    if (streaming) setSourcesPanelOpen(false)
+    if (messages.some((m) => m.isStreaming)) setSourcesPanelOpen(false)
   }, [messages])
-
-  function buildHistory(msgs: Message[]): HistoryMessage[] {
-    return msgs
-      .filter((m) => !m.isStreaming)
-      .map((m) => ({ role: m.role === 'user' ? 'user' : 'model', content: m.content }))
-  }
 
   const sendMessage = useCallback(async (query: string) => {
     const userMsg: Message = {
@@ -67,15 +81,11 @@ export default function App() {
     }
     const assistantId = ++msgId
 
-    const history = buildHistory(messagesRef.current)
-    setMessages((prev) => [
-      ...prev,
-      userMsg,
-      { id: assistantId, role: 'assistant', content: '', articles: [], assets: [], isStreaming: true },
-    ])
+    // Capture history BEFORE adding new messages to this chat
+    let chatId = currentChatIdRef.current
+    const history = buildHistory(chatMessagesRef.current.get(chatId ?? '') ?? [])
 
     // Create Firestore doc for new chat (or fall back to local ID)
-    let chatId = currentChatIdRef.current
     if (!chatId) {
       if (firebaseEnabled && db) {
         const ref = await addDoc(collection(db, 'chats'), {
@@ -93,6 +103,12 @@ export default function App() {
       currentChatIdRef.current = chatId
       setActiveChat(chatId)
     }
+
+    updateChatMessages(chatId, (prev) => [
+      ...prev,
+      userMsg,
+      { id: assistantId, role: 'assistant', content: '', articles: [], assets: [], isStreaming: true },
+    ])
 
     void fetchResponse(query, history, assistantId, chatId, userMsg)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,9 +153,18 @@ export default function App() {
           const raw = line.slice(5).trim()
 
           if (raw === '[DONE]') {
-            setMessages((prev) =>
-              prev.map((m) => m.id === assistantId ? { ...m, isStreaming: false } : m)
+            updateChatMessages(chatId, (prev) =>
+              prev.map((m) => {
+                if (m.id !== assistantId) return m
+                const cleaned = m.content
+                  .replace(/<think>[\s\S]*?<\/think>\s*/gi, '')
+                  .trimStart()
+                return { ...m, content: cleaned, isStreaming: false }
+              })
             )
+            assistantContent = assistantContent
+              .replace(/<think>[\s\S]*?<\/think>\s*/gi, '')
+              .trimStart()
             continue
           }
 
@@ -148,7 +173,7 @@ export default function App() {
 
           if (event.type === 'token') {
             assistantContent += event.content
-            setMessages((prev) =>
+            updateChatMessages(chatId, (prev) =>
               prev.map((m) =>
                 m.id === assistantId ? { ...m, content: m.content + event.content } : m
               )
@@ -156,7 +181,7 @@ export default function App() {
           } else if (event.type === 'sources') {
             finalArticles = event.articles as Article[]
             finalAssets   = event.assets   as Asset[]
-            setMessages((prev) =>
+            updateChatMessages(chatId, (prev) =>
               prev.map((m) =>
                 m.id === assistantId
                   ? { ...m, articles: finalArticles, assets: finalAssets }
@@ -164,7 +189,7 @@ export default function App() {
               )
             )
           } else if (event.type === 'error') {
-            setMessages((prev) =>
+            updateChatMessages(chatId, (prev) =>
               prev.map((m) =>
                 m.id === assistantId
                   ? { ...m, content: `Error: ${event.message}`, isStreaming: false }
@@ -177,7 +202,8 @@ export default function App() {
 
       // Persist full conversation to Firestore
       if (firebaseEnabled && db) {
-        const historicMsgs: StoredMessage[] = messagesRef.current
+        const allChatMsgs = chatMessagesRef.current.get(chatId) ?? []
+        const historicMsgs: StoredMessage[] = allChatMsgs
           .filter((m) => m.id !== userMsg.id && m.id !== assistantId)
           .map(({ isStreaming: _, ...rest }) => rest)
 
@@ -195,7 +221,7 @@ export default function App() {
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setMessages((prev) =>
+      updateChatMessages(chatId, (prev) =>
         prev.map((m) =>
           m.id === assistantId ? { ...m, content: `Error: ${msg}`, isStreaming: false } : m
         )
@@ -205,34 +231,50 @@ export default function App() {
 
   function handleNewChat() {
     currentChatIdRef.current = null
-    setMessages([])
+    // Don't wipe chatMessages — switching back to a previous chat stays instant
     setActiveChat(null)
     setSourcesPanelOpen(false)
   }
 
   async function handleSelectChat(id: string) {
-    if (firebaseEnabled && db) {
-      const snap = await getDoc(doc(db, 'chats', id))
-      if (!snap.exists()) return
-      const data = snap.data()
-      const stored = (data.messages ?? []) as StoredMessage[]
-      setMessages(stored.map((m) => ({ ...m, isStreaming: false })))
+    // Only fetch from Firestore if we haven't loaded this chat yet
+    if (!chatMessagesRef.current.has(id)) {
+      if (firebaseEnabled && db) {
+        const snap = await getDoc(doc(db, 'chats', id))
+        if (!snap.exists()) return
+        const stored = (snap.data().messages ?? []) as StoredMessage[]
+        setChatMessages((prev) => {
+          if (prev.has(id)) return prev  // loaded by another call while awaiting
+          const next = new Map(prev)
+          next.set(id, stored.map((m) => ({ ...m, isStreaming: false })))
+          return next
+        })
+      }
     }
     currentChatIdRef.current = id
     setActiveChat(id)
     setSourcesPanelOpen(false)
   }
 
-  // Derive sources panel data from latest assistant message
   const latestAssistant = [...messages].reverse().find((m) => m.role === 'assistant')
   const panelArticles   = latestAssistant?.articles ?? []
   const latestQuery     = [...messages].reverse().find((m) => m.role === 'user')?.content ?? ''
+
+  // Which chats are currently streaming (so the sidebar can show a pulse indicator)
+  const streamingChatIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const [chatId, msgs] of chatMessages) {
+      if (msgs.some((m) => m.isStreaming)) ids.add(chatId)
+    }
+    return ids
+  }, [chatMessages])
 
   return (
     <div className="layout">
       <Sidebar
         chatHistory={chatHistory}
         activeChat={activeChat}
+        streamingChatIds={streamingChatIds}
         onNewChat={handleNewChat}
         onSelectChat={handleSelectChat}
       />

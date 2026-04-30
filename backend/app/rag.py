@@ -98,6 +98,11 @@ def _embed_query(text: str) -> list[float]:
 
 SYSTEM_PROMPT = """You are Olive, the UN Media Concierge — a press assistant built for journalists working on deadline.
 
+FIRST MESSAGE RULE — MANDATORY
+When the conversation has no prior exchanges (the user message is the very first query), begin your response with exactly this line:
+"Hi, I'm Olive!"
+Do NOT add this greeting on any subsequent turn. If prior messages exist in the thread, jump straight to the answer.
+
 TONE
 - Talk directly to the journalist. Use "you" and "your." Never refer to "the journalist."
 - Precise, not bureaucratic. Use active voice.
@@ -156,6 +161,20 @@ def _source_display_name(source_field: str) -> str:
     return host
 
 
+def _resolve_url(meta: dict) -> str:
+    """
+    Return the best external URL from metadata, or empty string.
+    Rejects: relative paths, non-HTTP values, localhost URLs — all of these
+    cause the browser to resolve the link against the current portal page.
+    Priority: url field → source field (only if external HTTP) → empty
+    """
+    for key in ("url", "source"):
+        val = (meta.get(key) or "").strip()
+        if (val.startswith("http://") or val.startswith("https://")) and "localhost" not in val:
+            return val
+    return ""
+
+
 def _categorise_matches(matches) -> tuple[list[Article], list[Asset], list[str]]:
     articles: list[Article] = []
     assets: list[Asset] = []
@@ -167,22 +186,29 @@ def _categorise_matches(matches) -> tuple[list[Article], list[Asset], list[str]]
         text: str = meta.get("text", meta.get("content", "")).strip()
         title: str = meta.get("title", "Untitled")
         score: float = float(match.score or 0)
+        url: str = _resolve_url(meta)
+        raw_source: str = meta.get("source", "")
+        source_label: str = _source_display_name(raw_source)
+
+        log.debug(
+            "  match id=%-40s score=%.3f type=%-12s url=%s title=%s",
+            getattr(match, "id", "?"), score, doc_type,
+            url or "[MISSING]", title[:60],
+        )
+        if not url:
+            log.warning("Retrieved record '%s' has no external URL (source=%r, url=%r)",
+                        title[:60], meta.get("source"), meta.get("url"))
 
         if text:
             context_chunks.append(f"[{title}]\n{text}")
 
-        # The incoming JSON stores the document URL in "source"; "url" may be absent.
-        raw_source: str = meta.get("source", "")
-        url: str = meta.get("url", raw_source)  # fall back to source if url missing
-        source_label: str = _source_display_name(raw_source)
-
         if doc_type in _ASSET_TYPES:
-            raw_url = meta.get("asset_url", url)
+            raw_asset_url = meta.get("asset_url", url)
             assets.append(Asset(
                 title=title,
-                asset_url=raw_url,
+                asset_url=raw_asset_url,
                 asset_type=meta.get("asset_type", "image"),
-                thumbnail_url=meta.get("thumbnail_url", raw_url),
+                thumbnail_url=meta.get("thumbnail_url", raw_asset_url),
                 date=meta.get("date", ""),
                 description=meta.get("description", text[:200] if text else ""),
             ))
@@ -294,9 +320,18 @@ async def stream_query(
         )
         matches = results.matches if hasattr(results, "matches") else results.get("matches", [])
 
-        # 3. Categorise
+        # 3. Categorise + log every record
+        log.info("=== Pinecone retrieval for: %r ===", user_query[:80])
+        log.info("  total matches returned: %d", len(matches))
         articles, assets, context_chunks = _categorise_matches(matches)
-        log.info("Pinecone: %d chunk(s) retrieved", len(context_chunks))
+        log.info(
+            "  categorised → %d article(s), %d asset(s), %d chunk(s)",
+            len(articles), len(assets), len(context_chunks),
+        )
+        missing_url_count = sum(1 for a in articles if not a.url)
+        if missing_url_count:
+            log.warning("  %d article(s) have no external URL — citations will be non-clickable",
+                        missing_url_count)
 
         # 4. Fall back to mock data if index is empty
         using_mock = not context_chunks
@@ -352,13 +387,23 @@ async def stream_query(
             "Answer based on the sources above. Cite every factual claim using its source number [1], [2], etc."
         )
 
-        # 5. Stream via Groq (OpenAI-compatible)
+        # 5. Build message list for Groq (OpenAI-compatible)
+        is_first_message = len(history) == 0
         groq = OpenAI(api_key=config.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
 
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         for msg in history:
             role = "assistant" if msg["role"] == "model" else msg["role"]
             messages.append({"role": role, "content": msg["content"]})
+
+        # Reinforce the first-message greeting so the model doesn't skip it
+        if is_first_message:
+            user_prompt = (
+                "[SYSTEM NOTE: This is the user's first message. "
+                "Your response MUST begin with 'Hi, I'm Olive!' before anything else.]\n\n"
+                + user_prompt
+            )
+
         messages.append({"role": "user", "content": user_prompt})
 
         # 6. Stream response

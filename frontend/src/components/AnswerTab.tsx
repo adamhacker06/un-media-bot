@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Components } from 'react-markdown'
@@ -54,7 +54,7 @@ function preprocessNumbered(text: string, articles: Article[]): { md: string; gr
     }
 
     const a = articles[artIdx]
-    const label = a.source || getDomain(a.url)
+    const label = a.source || (a.url.startsWith('http') ? getDomain(a.url) : 'UN')
     return `[${label}](cite://${groupIdx})`
   })
 
@@ -93,31 +93,19 @@ function preprocessCitations(text: string, articles: Article[]): { md: string; g
 // ─── Citation badge component ────────────────────────────
 
 function CitationBadge({ label, group }: { label: string; group: CiteGroup }) {
-  const [open, setOpen] = useState(false)
-  const [page, setPage] = useState(0)
-  const ref = useRef<HTMLSpanElement>(null)
+  // Use the first citation as the primary link target
+  const cite = group.citations[0]
+  const hasUrl = cite.url.startsWith('http') && !cite.url.includes('localhost')
+  const domain = hasUrl ? getDomain(cite.url) : (cite.source || 'UN')
 
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  useEffect(() => { if (!open) setPage(0) }, [open])
-
-  const cite = group.citations[page]
-  const domain = getDomain(cite.url)
-  const total = group.citations.length
-
-  return (
-    <span ref={ref} className="cite-wrap">
-      <button
+  if (hasUrl) {
+    return (
+      <a
         className="cite-badge"
-        onClick={() => setOpen(v => !v)}
-        aria-expanded={open}
+        href={cite.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={cite.title}
       >
         <img
           src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
@@ -127,65 +115,51 @@ function CitationBadge({ label, group }: { label: string; group: CiteGroup }) {
           className="cite-badge-favicon"
         />
         {label}
-      </button>
+      </a>
+    )
+  }
 
-      {open && (
-        <span className="cite-popover" role="dialog">
-          {total > 1 && (
-            <span className="cite-popover-nav">
-              <button
-                className="cite-nav-btn"
-                onClick={() => setPage(p => Math.max(0, p - 1))}
-                disabled={page === 0}
-              >‹</button>
-              <span className="cite-nav-pos">{page + 1} / {total}</span>
-              <button
-                className="cite-nav-btn"
-                onClick={() => setPage(p => Math.min(total - 1, p + 1))}
-                disabled={page === total - 1}
-              >›</button>
-            </span>
-          )}
-
-          <a
-            className="cite-popover-body"
-            href={cite.url}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span className="cite-popover-domain">
-              <img
-                src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
-                width={14}
-                height={14}
-                alt=""
-              />
-              {domain}
-            </span>
-            <span className="cite-popover-title">{cite.title}</span>
-            {cite.date && <span className="cite-popover-date">{cite.date}</span>}
-          </a>
-        </span>
-      )}
+  // No external URL — render non-navigable badge
+  return (
+    <span className="cite-badge cite-badge--no-link" title={cite.title}>
+      {label}
     </span>
   )
 }
 
 // ─── Markdown component map ──────────────────────────────
 
-function makeMdComponents(groups: CiteGroup[]): Components {
+function makeMdComponents(groups: CiteGroup[], articles: Article[]): Components {
+  // source label → group index, for fallback matching when model generates bad hrefs
+  const sourceToGroup = new Map<string, CiteGroup>()
+  articles.forEach((a) => {
+    const g: CiteGroup = { citations: [{ title: a.title, date: a.date, url: a.url, source: a.source }] }
+    if (a.source) sourceToGroup.set(a.source.toLowerCase(), g)
+    if (a.url.startsWith('http')) sourceToGroup.set(getDomain(a.url).toLowerCase(), g)
+  })
+
   return {
     a({ href, children }) {
+      // Numbered citation resolved by preprocessor
       if (href?.startsWith('cite://')) {
         const idx = parseInt(href.slice(7), 10)
         const group = groups[idx]
         if (group) return <CitationBadge label={String(children)} group={group} />
       }
-      return (
-        <a className="md-link" href={href ?? '#'} target="_blank" rel="noopener noreferrer">
-          {children}
-        </a>
-      )
+      // Genuine external link
+      if (href && (href.startsWith('https://') || href.startsWith('http://')) && !href.includes('localhost')) {
+        return (
+          <a className="md-link" href={href} target="_blank" rel="noopener noreferrer">
+            {children}
+          </a>
+        )
+      }
+      // Bad/relative href — try to resolve via source label so it still links correctly
+      const label = String(children).trim().toLowerCase()
+      const fallback = sourceToGroup.get(label)
+      if (fallback) return <CitationBadge label={String(children)} group={fallback} />
+      // Truly unresolvable — render as plain text, never navigate to localhost
+      return <span>{children}</span>
     },
     h1({ children }) { return <h2 className="md-h2">{children}</h2> },
     h2({ children }) { return <h2 className="md-h2">{children}</h2> },
@@ -254,7 +228,7 @@ export default function AnswerTab({ answer, isStreaming, error, articles }: Answ
   }
 
   const { md, groups } = preprocessCitations(text, articles)
-  const components = makeMdComponents(groups)
+  const components = makeMdComponents(groups, articles)
 
   return (
     <div className="tab-content">
