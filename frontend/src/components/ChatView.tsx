@@ -2,25 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import SearchBar from './SearchBar.tsx'
 import AnswerTab from './AnswerTab.tsx'
 import SourcesTab from './SourcesTab.tsx'
-import AssetsTab from './AssetsTab.tsx'
 import type { Article, Message, TabId } from '../types.ts'
-
-const CITATION_URL_RE = /\[Source:\s*[^\]—]+?,\s*[^—\]]+?\s*—\s*(https?:\/\/[^\]]+?)\]/g
-
-function extractCitedUrls(text: string): Set<string> {
-  const urls = new Set<string>()
-  CITATION_URL_RE.lastIndex = 0
-  let m: RegExpExecArray | null
-  while ((m = CITATION_URL_RE.exec(text)) !== null) urls.add(m[1].trim())
-  return urls
-}
-
-function filterCitedArticles(articles: Article[], answerText: string, isStreaming: boolean): Article[] {
-  if (isStreaming) return articles
-  const cited = extractCitedUrls(answerText)
-  if (cited.size === 0) return articles
-  return articles.filter((a) => a.url && cited.has(a.url))
-}
 
 function getDomain(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, '') } catch { return url }
@@ -108,15 +90,12 @@ export default function ChatView({ messages, onSend, sourcesPanelOpen, onToggleS
     onSend(q)
   }
 
-  const hasResponse  = !!latestAssistant
-  const citedArticles = latestAssistant
-    ? filterCitedArticles(latestAssistant.articles, latestAssistant.content, latestAssistant.isStreaming ?? false)
-    : []
+  const hasResponse = !!latestAssistant
+  const articles    = latestAssistant?.articles ?? []
 
   const tabs: { id: TabId; label: string; count?: number }[] = [
     { id: 'answer',  label: 'Answer' },
-    { id: 'sources', label: 'Links',  count: citedArticles.length },
-    { id: 'assets',  label: 'Assets', count: latestAssistant?.assets.length },
+    { id: 'sources', label: 'Links',  count: articles.length },
   ]
 
   return (
@@ -187,26 +166,19 @@ export default function ChatView({ messages, onSend, sourcesPanelOpen, onToggleS
                     answer={latestAssistant.content}
                     isStreaming={latestAssistant.isStreaming}
                     error={null}
-                    articles={latestAssistant.articles}
                   />
                 )}
                 {activeTab === 'sources' && (
                   <SourcesTab
-                    articles={citedArticles}
-                    isLoading={latestAssistant.isStreaming && !latestAssistant.articles.length}
-                  />
-                )}
-                {activeTab === 'assets' && (
-                  <AssetsTab
-                    assets={latestAssistant.assets}
-                    isLoading={latestAssistant.isStreaming && !latestAssistant.assets.length}
+                    articles={articles}
+                    isLoading={latestAssistant.isStreaming && !articles.length}
                   />
                 )}
 
                 {/* Perplexity-style sources bar — shown after streaming completes */}
                 {!latestAssistant.isStreaming && activeTab === 'answer' && (
                   <SourcesBar
-                    articles={citedArticles}
+                    articles={articles}
                     open={sourcesPanelOpen}
                     onToggle={onToggleSources}
                   />

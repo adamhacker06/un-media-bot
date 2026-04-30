@@ -25,7 +25,9 @@ Pinecone metadata schema per vector:
 
 import json
 import logging
+import time
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from typing import AsyncGenerator, Optional
 
 from openai import OpenAI
@@ -98,6 +100,9 @@ def _embed_query(text: str) -> list[float]:
 
 SYSTEM_PROMPT = """You are Olive, the UN Media Concierge — a press assistant built for journalists working on deadline.
 
+TODAY'S DATE: {today}
+Use this to resolve relative date references like "yesterday", "last Tuesday", or "two weeks ago". When the user uses a relative reference, state the resolved absolute date in your answer.
+
 FIRST MESSAGE RULE — MANDATORY
 When the conversation has no prior exchanges (the user message is the very first query), begin your response with exactly this line:
 "Hi, I'm Olive!"
@@ -109,6 +114,7 @@ TONE
 - Candid, not cheerful. Treat the person you're talking to as a professional. No exclamation marks. Never say "Great question!"
 - Neutral on sensitive terms: use UN official language and flag when other parties use different terms.
 - Honest about limits. Say "I don't have a verified answer" rather than guessing. Always end with a document, contact, or next step.
+- Speak as a knowledgeable colleague with limits, not as a database lookup. NEVER say "the sources provided", "the materials I have", "the documents available to me", "based on the information above", "according to my context", or any phrasing that reveals you are reading from a retrieval system. If you can't answer, just say so plainly.
 
 WRITING RULES
 1. Lead with the answer — facts and documents first, context after.
@@ -118,18 +124,22 @@ WRITING RULES
 5. Never leave you empty-handed. Every dead end ends with a next step.
 6. Unpack jargon the first time only (e.g., explain "A/78/L.1" once, don't repeat).
 7. Match your urgency to theirs — short when you're on deadline, fuller context when you're researching.
+8. Bold the substantive facts a journalist would pull for a headline using markdown **...** — concrete statistics and figures (e.g. **$1.3 billion**, **2,260 protected sites**, **$2.2 trillion**), named policy decisions, key country/organization actions, or short verbatim quoted phrases from named officials. Most paragraphs should contain at least one bolded phrase so the journalist can scan for the substance. Do NOT bold dates, time references (e.g. "this month", "yesterday"), common phrases, generic statements, or whole sentences.
 
-CITATION RULES — MANDATORY
-Cite every factual claim using the numbered source reference, e.g. [1], [2].
-Place the bracketed number immediately after the claim it supports.
-Multiple citations can appear together: [1][2].
+GROUNDING — NON-NEGOTIABLE
+1. The numbered source chunks below are your ONLY knowledge base. Do NOT use training data, general world knowledge, or any external information — even if you "know" something is true.
+2. Every factual statement (names, dates, figures, quotes, policies) must come from a specific numbered chunk. If you cannot trace a claim to a chunk, omit it.
+3. NEVER invent quotes. Quotation marks ("...") may ONLY enclose text that appears VERBATIM in a numbered chunk. If you cannot find the exact phrase in any chunk, paraphrase the chunk's actual wording WITHOUT quotation marks. Do NOT pattern-match against famous quotes you remember from training.
+4. If you do not have enough information to answer, say so plainly — for example: "I don't have enough information to answer this confidently." Then suggest where the journalist could look (UN body, document type, or contact). Do NOT reference "sources," "chunks," or "the materials provided" — speak as an assistant with limits, not as a retrieval system.
+5. Do not extrapolate, infer beyond the chunks, or fill gaps with plausible-sounding facts. If it is not in a chunk, it is not in the answer.
+6. Do NOT include inline citation markers like [1], [2], or [Source N] in your answer. Do NOT write out source titles, dates, or URLs inline. Just write the answer in clean prose — the journalist sees the source list separately in the UI.
 
-- Use AT LEAST 3 DIFFERENT sources when the context provides them.
-- Do NOT write out source titles, dates, or URLs inline. Only use the bracketed number.
-- Never fabricate a source number that was not provided in the context.
+TEMPORAL ACCURACY
+1. When the user asks about a specific date or time window, identify which chunks actually cover that date.
+2. A document published on date Y is NOT automatically a source about events on date X. Do not cite a chunk as authoritative for a date the chunk does not discuss.
+3. If the available information is from a different time period than the question, flag this without referencing "sources" — for example: "The most recent confirmed information I have is from [date], which may not reflect [requested date]."
 
-CONTEXT
-Answer using only the numbered source chunks provided. Draw on ALL sources — do not ignore any. If the sources don't contain enough to answer fully, say so and tell the journalist where to look next."""
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -384,14 +394,20 @@ async def stream_query(
             f"Context from UN documents:\n\n{context_text}\n\n"
             f"---\n\n"
             f"Question: {user_query}\n\n"
-            "Answer based on the sources above. Cite every factual claim using its source number [1], [2], etc."
+            "Answer using only what is provided above. Do not include inline citation markers, and do not say things like 'the sources provided', 'the materials I have', or 'based on the information above' — write clean prose as a knowledgeable assistant."
         )
 
         # 5. Build message list for Groq (OpenAI-compatible)
         is_first_message = len(history) == 0
-        groq = OpenAI(api_key=config.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
+        today_str = datetime.now().strftime("%A, %B %d, %Y")
+        groq = OpenAI(
+            api_key=config.GROQ_API_KEY,
+            base_url="https://api.groq.com/openai/v1",
+            max_retries=1,
+            timeout=60.0,
+        )
 
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        messages = [{"role": "system", "content": SYSTEM_PROMPT.format(today=today_str)}]
         for msg in history:
             role = "assistant" if msg["role"] == "model" else msg["role"]
             messages.append({"role": role, "content": msg["content"]})
@@ -407,17 +423,28 @@ async def stream_query(
         messages.append({"role": "user", "content": user_prompt})
 
         # 6. Stream response
+        log.info("LLM call starting (model=%s)", config.LLM_MODEL)
+        t0 = time.monotonic()
         stream = groq.chat.completions.create(
             model=config.LLM_MODEL,
             messages=messages,
             stream=True,
-            temperature=0.2,
+            temperature=0.1,
             max_tokens=1024,
         )
+        first_token_at = None
         for chunk in stream:
             content = chunk.choices[0].delta.content
             if content:
+                if first_token_at is None:
+                    first_token_at = time.monotonic() - t0
+                    log.info("LLM first token after %.2fs", first_token_at)
                 yield f"data: {json.dumps({'type': 'token', 'content': content})}\n\n"
+        log.info(
+            "LLM call complete in %.2fs (first token at %.2fs)",
+            time.monotonic() - t0,
+            first_token_at if first_token_at is not None else -1.0,
+        )
 
         # 7. Emit sources
         yield f"data: {json.dumps({'type': 'sources', 'articles': [asdict(a) for a in articles], 'assets': [asdict(a) for a in assets]})}\n\n"

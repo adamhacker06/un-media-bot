@@ -90,7 +90,7 @@ export default function ResultsView({
         ))}
       </div>
 
-      {activeTab === 'answer'  && <AnswerTab  answer={answer}     isStreaming={isStreaming} error={error} articles={articles} />}
+      {activeTab === 'answer'  && <AnswerTab  answer={answer}     isStreaming={isStreaming} error={error} />}
       {activeTab === 'sources' && <SourcesTab articles={articles} isLoading={isLoading} />}
       {activeTab === 'assets'  && <AssetsTab  assets={assets}     isLoading={isLoading} />}
     </div>
