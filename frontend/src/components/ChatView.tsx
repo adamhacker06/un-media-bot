@@ -3,6 +3,7 @@ import SearchBar from './SearchBar.tsx'
 import AnswerTab from './AnswerTab.tsx'
 import SourcesTab from './SourcesTab.tsx'
 import type { Article, Message, TabId } from '../types.ts'
+import oliveLogo from '../assets/olive.svg'
 
 function getDomain(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, '') } catch { return url }
@@ -18,6 +19,7 @@ function EmptyState() {
       <p className="chat-empty-sub">
         Ask about press releases, resolutions, briefings, or media assets.
       </p>
+      <img src={oliveLogo} className="chat-empty-logo" />
     </div>
   )
 }
@@ -139,6 +141,14 @@ export default function ChatView({ messages, onSend, sourcesPanelOpen, onToggleS
               })
               .map((msg) => (
                 <div key={msg.id} className={`chat-history-msg chat-history-msg--${msg.role}`}>
+                  {msg.role === 'assistant' && (
+                    <img
+                      src={oliveLogo}
+                      alt="Olive"
+                      className="chat-avatar"
+                    />
+                  )}
+              
                   {msg.role === 'user' ? (
                     <span className="chat-history-query">{msg.content}</span>
                   ) : (
@@ -162,11 +172,14 @@ export default function ChatView({ messages, onSend, sourcesPanelOpen, onToggleS
             {latestAssistant && (
               <>
                 {activeTab === 'answer' && (
-                  <AnswerTab
-                    answer={latestAssistant.content}
-                    isStreaming={latestAssistant.isStreaming}
-                    error={null}
-                  />
+                  <div className="chat-current-answer">
+                    <img src={oliveLogo} alt="Olive" className="chat-avatar" />
+                    <AnswerTab
+                      answer={latestAssistant.content}
+                      isStreaming={latestAssistant.isStreaming}
+                      error={null}
+                    />
+                  </div>
                 )}
                 {activeTab === 'sources' && (
                   <SourcesTab
